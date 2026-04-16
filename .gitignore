@@ -1,0 +1,11 @@
+# Python environment
+venv/
+__pycache__/
+*.pyc
+
+# Database lokal
+data/*.db
+
+# IDE settings
+.vscode/
+.idea/
