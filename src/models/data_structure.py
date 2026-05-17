@@ -42,7 +42,8 @@ def create_tables():
             name TEXT NOT NULL,
             department_id INTEGER NOT NULL,
             additional_info TEXT,
-            FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+            FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+            UNIQUE(name, department_id)
         );
 
         CREATE TABLE IF NOT EXISTS alternative_scores (
@@ -54,6 +55,11 @@ def create_tables():
             FOREIGN KEY (criteria_id) REFERENCES criteria(id) ON DELETE CASCADE,
             UNIQUE(alternative_id, criteria_id)
         );
+        CREATE INDEX IF NOT EXISTS idx_dept_profiles_dept ON department_profiles(department_id);
+        CREATE INDEX IF NOT EXISTS idx_dept_profiles_criteria ON department_profiles(criteria_id);
+        CREATE INDEX IF NOT EXISTS idx_alternatives_dept ON alternatives(department_id);
+        CREATE INDEX IF NOT EXISTS idx_alt_scores_alt ON alternative_scores(alternative_id);
+        CREATE INDEX IF NOT EXISTS idx_alt_scores_criteria ON alternative_scores(criteria_id);
     """)
     conn.commit()
     conn.close()
