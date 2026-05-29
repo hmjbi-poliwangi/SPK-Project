@@ -1,9 +1,14 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'database.db')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
+DB_PATH = os.path.join(DB_DIR, 'database.db')
 
 def get_connection():
+    # Pastikan folder data ada
+    if not os.path.exists(DB_DIR):
+        os.makedirs(DB_DIR)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
