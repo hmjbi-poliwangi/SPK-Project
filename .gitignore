@@ -9,4 +9,6 @@ data/*.db
 # IDE settings
 .vscode/
 .idea/
+
+# Project test code
 test_engine.py
