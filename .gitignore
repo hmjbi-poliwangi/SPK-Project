@@ -10,5 +10,5 @@ data/*.db
 .vscode/
 .idea/
 
-# Project test code
-test_engine.py
+# Folder test
+test/
