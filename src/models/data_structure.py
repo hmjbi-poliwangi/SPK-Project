@@ -1,3 +1,5 @@
+# File src/models/data_structure.py
+
 import sqlite3
 import os
 from contextlib import contextmanager
