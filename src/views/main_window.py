@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from src.views.home_page import HomePage
+from src.views.criteria_page import CriteriaPage
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -83,7 +84,7 @@ class MainWindow(QMainWindow):
 
         # Halaman-halaman
         self.home_page = HomePage()
-        self.kriteria_page = self._create_placeholder_page("Kriteria")
+        self.kriteria_page = CriteriaPage()
         self.departemen_page = self._create_placeholder_page("Departemen")
         self.alternatif_page = self._create_placeholder_page("Alternatif")
 
