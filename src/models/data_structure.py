@@ -288,6 +288,13 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
                 WHERE dp.department_id = ?
             """, (department_id,)).fetchall()
 
+def get_active_profiles(department_id):
+    """
+    Mengembalikan profil kriteria yang aktif untuk suatu departemen.
+    (Fungsi wrapper agar sesuai dengan nama yang dipakai engine profile matching)
+    """
+    return get_department_profiles(department_id, active_only=True)
+
 # -------------------------------------------------------------------
 # 5. Pengelolaan Alternative Scores (nilai kandidat per kriteria)
 # -------------------------------------------------------------------

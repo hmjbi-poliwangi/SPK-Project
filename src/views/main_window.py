@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt
 from src.views.home_page import HomePage
 from src.views.criteria_page import CriteriaPage
 from src.views.department_page import DepartmentPage
+from src.views.alternative_page import AlternativePage
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -87,7 +88,7 @@ class MainWindow(QMainWindow):
         self.home_page = HomePage()
         self.kriteria_page = CriteriaPage()
         self.departemen_page = DepartmentPage()
-        self.alternatif_page = self._create_placeholder_page("Alternatif")
+        self.alternatif_page = AlternativePage()
 
         self.stacked_widget.addWidget(self.home_page)        # index 0
         self.stacked_widget.addWidget(self.kriteria_page)    # index 1

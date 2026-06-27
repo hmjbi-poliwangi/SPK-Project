@@ -13,6 +13,7 @@ from src.models.data_structure import (
     delete_department_profile, get_all_criteria, get_db_read
 )
 
+from src.engine.profile_matching import rank_alternatives
 
 class DepartmentPage(QWidget):
     def __init__(self):
@@ -100,10 +101,9 @@ class DepartmentPage(QWidget):
             self.load_data()
 
     def open_edit_dialog(self, department_id):
-        """Dialog edit departemen + kelola profil."""
         dialog = DepartmentDetailDialog(self, department_id)
         dialog.exec()
-        self.load_data()  # refresh setelah edit
+        self.load_data()
 
     def delete_department(self, department_id):
         confirm = QMessageBox.question(
@@ -214,6 +214,11 @@ class DepartmentDetailDialog(QDialog):
         btn_add_profile.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
         btn_add_profile.clicked.connect(self.add_profile)
         layout.addWidget(btn_add_profile, alignment=Qt.AlignmentFlag.AlignLeft)
+        btn_ranking = QPushButton("🏆 Peringkat Alternatif")
+        btn_ranking.setStyleSheet("background-color: #9b59b6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_ranking.clicked.connect(self.show_ranking)
+        layout.addWidget(btn_ranking, alignment=Qt.AlignmentFlag.AlignLeft)
+        
 
         # Tombol tutup
         btn_close = QPushButton("Tutup")
@@ -290,6 +295,11 @@ class DepartmentDetailDialog(QDialog):
                 self.load_profiles()
             except Exception as e:
                 QMessageBox.critical(self, "Error", str(e))
+    
+    def show_ranking(self):
+        rankings = rank_alternatives(self.department_id)
+        dialog = RankingDialog(self, rankings)
+        dialog.exec()
 
 
 # -------------------------------------------------------------------
@@ -408,3 +418,44 @@ class ProfileFormDialog(QDialog):
             self.accept()
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
+
+class RankingDialog(QDialog):
+    def __init__(self, parent, rankings):
+        super().__init__(parent)
+        self.setWindowTitle("Peringkat Alternatif (Profile Matching)")
+        self.setMinimumSize(500, 350)
+        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        layout = QVBoxLayout(self)
+
+        title = QLabel("Hasil Peringkat Alternatif")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #ecec13; margin-bottom: 10px;")
+        layout.addWidget(title)
+
+        table = QTableWidget()
+        table.setColumnCount(4)
+        table.setHorizontalHeaderLabels(["Nama Alternatif", "NCF", "NSF", "Total Skor"])
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        table.setStyleSheet("""
+            QTableWidget {
+                background-color: #1d1d1d; gridline-color: #444;
+            }
+            QTableWidget::item { color: #f0f0f0; padding: 5px; }
+            QHeaderView::section {
+                background-color: #333; color: white; padding: 6px;
+                border: 1px solid #444;
+            }
+        """)
+        table.setRowCount(len(rankings))
+        for row, r in enumerate(rankings):
+            table.setItem(row, 0, QTableWidgetItem(r['name']))
+            table.setItem(row, 1, QTableWidgetItem(f"{r['ncf']:.3f}"))
+            table.setItem(row, 2, QTableWidgetItem(f"{r['nsf']:.3f}"))
+            table.setItem(row, 3, QTableWidgetItem(f"{r['total']:.3f}"))
+        layout.addWidget(table)
+
+        btn_close = QPushButton("Tutup")
+        btn_close.setStyleSheet("background-color: #7f8c8d; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_close.clicked.connect(self.accept)
+        layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignRight)
