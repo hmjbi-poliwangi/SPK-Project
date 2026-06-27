@@ -10,7 +10,8 @@ from src.models.data_structure import (
     get_all_departments, create_department, update_department,
     delete_department, get_department_profiles,
     add_department_profile, update_department_profile,
-    delete_department_profile, get_all_criteria, get_db_read
+    delete_department_profile, get_all_criteria, get_db_read,
+    clear_department_rankings
 )
 
 from src.engine.profile_matching import rank_alternatives
@@ -277,21 +278,21 @@ class DepartmentDetailDialog(QDialog):
     def add_profile(self):
         dialog = ProfileFormDialog(self, department_id=self.department_id)
         if dialog.exec() == QDialog.DialogCode.Accepted:
+            clear_department_rankings(self.department_id)   # tambahkan
             self.load_profiles()
 
     def edit_profile(self, profile_id):
         dialog = ProfileFormDialog(self, department_id=self.department_id, profile_id=profile_id)
         if dialog.exec() == QDialog.DialogCode.Accepted:
+            clear_department_rankings(self.department_id)
             self.load_profiles()
 
     def delete_profile(self, profile_id):
-        confirm = QMessageBox.question(
-            self, "Konfirmasi", "Hapus profil ini?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        confirm = QMessageBox.question(...)
         if confirm == QMessageBox.StandardButton.Yes:
             try:
                 delete_department_profile(profile_id)
+                clear_department_rankings(self.department_id)   # tambahkan
                 self.load_profiles()
             except Exception as e:
                 QMessageBox.critical(self, "Error", str(e))

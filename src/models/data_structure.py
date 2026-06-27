@@ -1,5 +1,3 @@
-# File src/models/data_structure.py
-
 import sqlite3
 import os
 from contextlib import contextmanager
@@ -12,17 +10,15 @@ DB_PATH = os.path.join(DB_DIR, 'database.db')
 # Koneksi database
 # -------------------------------------------------------------------
 def get_connection():
-    """Buat koneksi baru dengan timeout untuk menghindari lock."""
     if not os.path.exists(DB_DIR):
         os.makedirs(DB_DIR)
-    conn = sqlite3.connect(DB_PATH, timeout=10)   # tunggu hingga 10 detik jika terkunci
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 @contextmanager
 def get_db():
-    """Context manager yang menjamin koneksi selalu ditutup dan commit/rollback otomatis."""
     conn = get_connection()
     try:
         yield conn
@@ -35,7 +31,6 @@ def get_db():
 
 @contextmanager
 def get_db_read():
-    """Context manager untuk operasi baca (tanpa commit)."""
     conn = get_connection()
     try:
         yield conn
@@ -46,7 +41,6 @@ def get_db_read():
 # 1. CRUD Departments
 # -------------------------------------------------------------------
 def create_department(name: str) -> int:
-    """Tambah departemen baru, kembalikan id."""
     try:
         with get_db() as conn:
             cur = conn.execute("INSERT INTO departments (name) VALUES (?)", (name,))
@@ -55,12 +49,10 @@ def create_department(name: str) -> int:
         raise ValueError(f"Department dengan nama '{name}' sudah ada.")
 
 def get_all_departments() -> list:
-    """Ambil semua departemen."""
     with get_db_read() as conn:
         return conn.execute("SELECT * FROM departments ORDER BY id").fetchall()
 
 def get_department_by_id(department_id: int) -> dict:
-    """Ambil satu departemen berdasarkan ID."""
     with get_db_read() as conn:
         row = conn.execute("SELECT * FROM departments WHERE id = ?", (department_id,)).fetchone()
         if row is None:
@@ -68,7 +60,6 @@ def get_department_by_id(department_id: int) -> dict:
         return row
 
 def update_department(department_id: int, name: str) -> bool:
-    """Ubah nama departemen."""
     try:
         with get_db() as conn:
             conn.execute("UPDATE departments SET name = ? WHERE id = ?", (name, department_id))
@@ -77,7 +68,6 @@ def update_department(department_id: int, name: str) -> bool:
         raise ValueError(f"Nama '{name}' sudah dipakai departemen lain.")
 
 def delete_department(department_id: int) -> bool:
-    """Hapus departemen (cascade ke profiles & alternatives)."""
     with get_db() as conn:
         conn.execute("DELETE FROM departments WHERE id = ?", (department_id,))
         return True
@@ -86,7 +76,6 @@ def delete_department(department_id: int) -> bool:
 # 2. CRUD Criteria
 # -------------------------------------------------------------------
 def create_criteria(name: str, description: str = None) -> int:
-    """Tambah kriteria baru."""
     try:
         with get_db() as conn:
             cur = conn.execute("INSERT INTO criteria (name, description) VALUES (?, ?)", (name, description))
@@ -95,12 +84,10 @@ def create_criteria(name: str, description: str = None) -> int:
         raise ValueError(f"Kriteria dengan nama '{name}' sudah ada.")
 
 def get_all_criteria() -> list:
-    """Ambil semua kriteria."""
     with get_db_read() as conn:
         return conn.execute("SELECT * FROM criteria ORDER BY id").fetchall()
 
 def get_criteria_by_id(criteria_id: int) -> dict:
-    """Ambil satu kriteria."""
     with get_db_read() as conn:
         row = conn.execute("SELECT * FROM criteria WHERE id = ?", (criteria_id,)).fetchone()
         if row is None:
@@ -108,7 +95,6 @@ def get_criteria_by_id(criteria_id: int) -> dict:
         return row
 
 def update_criteria(criteria_id: int, name: str = None, description: str = None) -> bool:
-    """Ubah nama / deskripsi kriteria. Parameter yang None tidak diubah."""
     try:
         with get_db() as conn:
             if name is not None:
@@ -120,99 +106,62 @@ def update_criteria(criteria_id: int, name: str = None, description: str = None)
         raise ValueError(f"Nama kriteria '{name}' sudah digunakan.")
 
 def delete_criteria(criteria_id: int) -> bool:
-    """Hapus kriteria (cascade ke profiles & scores)."""
     with get_db() as conn:
         conn.execute("DELETE FROM criteria WHERE id = ?", (criteria_id,))
         return True
 
 # -------------------------------------------------------------------
-# 3. CRUD Alternatives (kandidat)
+# 3. CRUD Alternatives (tanpa department_id)
 # -------------------------------------------------------------------
-def create_alternative(name: str, department_id: int, additional_info: str = None) -> int:
-    """Tambah kandidat di suatu departemen."""
+def create_alternative(name: str, additional_info: str = None) -> int:
+    """Tambah alternatif independen (tanpa departemen)."""
     try:
         with get_db() as conn:
             cur = conn.execute(
-                "INSERT INTO alternatives (name, department_id, additional_info) VALUES (?, ?, ?)",
-                (name, department_id, additional_info)
+                "INSERT INTO alternatives (name, additional_info) VALUES (?, ?)",
+                (name, additional_info)
             )
             return cur.lastrowid
-    except sqlite3.IntegrityError as e:
-        if "UNIQUE constraint failed" in str(e):
-            raise ValueError(f"Kandidat '{name}' sudah ada di departemen tersebut.")
-        elif "FOREIGN KEY constraint failed" in str(e):
-            raise ValueError(f"Department dengan id {department_id} tidak ditemukan.")
-        else:
-            raise
+    except sqlite3.IntegrityError:
+        raise ValueError(f"Alternatif dengan nama '{name}' sudah ada.")
 
 def get_all_alternatives() -> list:
-    """Ambil semua kandidat, sertakan nama departemen."""
+    """Ambil semua alternatif (tanpa info departemen)."""
     with get_db_read() as conn:
-        return conn.execute("""
-            SELECT a.*, d.name as department_name
-            FROM alternatives a
-            JOIN departments d ON a.department_id = d.id
-            ORDER BY a.id
-        """).fetchall()
-
-def get_department_alternatives(department_id: int) -> list:
-    """Semua kandidat di departemen tertentu."""
-    with get_db_read() as conn:
-        return conn.execute("SELECT * FROM alternatives WHERE department_id = ?", (department_id,)).fetchall()
-
-# Alias untuk kompatibilitas mundur (jika ada yang memanggil get_alternatives_by_department)
-def get_alternatives_by_department(department_id: int) -> list:
-    """Alias dari get_department_alternatives."""
-    return get_department_alternatives(department_id)
+        return conn.execute("SELECT * FROM alternatives ORDER BY id").fetchall()
 
 def get_alternative_by_id(alternative_id: int) -> dict:
-    """Ambil satu kandidat beserta nama departemen."""
     with get_db_read() as conn:
-        row = conn.execute("""
-            SELECT a.*, d.name as department_name
-            FROM alternatives a
-            JOIN departments d ON a.department_id = d.id
-            WHERE a.id = ?
-        """, (alternative_id,)).fetchone()
+        row = conn.execute("SELECT * FROM alternatives WHERE id = ?", (alternative_id,)).fetchone()
         if row is None:
             raise ValueError(f"Alternative dengan id {alternative_id} tidak ditemukan.")
         return row
 
 def update_alternative(alternative_id: int, name: str = None,
-                       department_id: int = None, additional_info: str = None) -> bool:
-    """Ubah data kandidat."""
+                       additional_info: str = None) -> bool:
+    """Ubah data alternatif, tanpa departemen."""
     try:
         with get_db() as conn:
             if name is not None:
                 conn.execute("UPDATE alternatives SET name = ? WHERE id = ?", (name, alternative_id))
-            if department_id is not None:
-                conn.execute("UPDATE alternatives SET department_id = ? WHERE id = ?", (department_id, alternative_id))
             if additional_info is not None:
                 conn.execute("UPDATE alternatives SET additional_info = ? WHERE id = ?", (additional_info, alternative_id))
             return True
-    except sqlite3.IntegrityError as e:
-        if "UNIQUE constraint failed" in str(e):
-            raise ValueError("Nama kandidat sudah ada di departemen tersebut.")
-        elif "FOREIGN KEY constraint failed" in str(e):
-            raise ValueError("Department id tidak valid.")
-        else:
-            raise
+    except sqlite3.IntegrityError:
+        raise ValueError("Nama alternatif sudah ada.")
 
 def delete_alternative(alternative_id: int) -> bool:
-    """Hapus kandidat (cascade ke scores)."""
     with get_db() as conn:
         conn.execute("DELETE FROM alternatives WHERE id = ?", (alternative_id,))
         return True
 
 # -------------------------------------------------------------------
-# 4. Pengelolaan Department Profiles (relasi kriteria-departemen)
+# 4. Department Profiles
 # -------------------------------------------------------------------
 def add_department_profile(department_id: int, criteria_id: int,
                            target_value: float, weight: float, type_: str) -> int:
-    """Tambahkan profil (bobot, target) kriteria untuk suatu departemen."""
     if type_ not in ('core', 'secondary'):
         raise ValueError("type harus 'core' atau 'secondary'.")
-    # Validasi numerik
     try:
         target_value = float(target_value)
         weight = float(weight)
@@ -236,8 +185,6 @@ def add_department_profile(department_id: int, criteria_id: int,
 def update_department_profile(profile_id: int, target_value: float = None,
                               weight: float = None, type_: str = None,
                               is_active: int = None) -> bool:
-    """Ubah nilai pada profil yang sudah ada."""
-    # Validasi
     if target_value is not None:
         try:
             target_value = float(target_value)
@@ -265,13 +212,11 @@ def update_department_profile(profile_id: int, target_value: float = None,
         return True
 
 def delete_department_profile(profile_id: int) -> bool:
-    """Hapus profil kriteria dari departemen."""
     with get_db() as conn:
         conn.execute("DELETE FROM department_profiles WHERE id = ?", (profile_id,))
         return True
 
 def get_department_profiles(department_id: int, active_only: bool = False) -> list:
-    """Ambil daftar profil untuk departemen, bisa filter yang aktif saja."""
     with get_db_read() as conn:
         if active_only:
             return conn.execute("""
@@ -289,24 +234,18 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
             """, (department_id,)).fetchall()
 
 def get_active_profiles(department_id):
-    """
-    Mengembalikan profil kriteria yang aktif untuk suatu departemen.
-    (Fungsi wrapper agar sesuai dengan nama yang dipakai engine profile matching)
-    """
     return get_department_profiles(department_id, active_only=True)
 
 # -------------------------------------------------------------------
-# 5. Pengelolaan Alternative Scores (nilai kandidat per kriteria)
+# 5. Alternative Scores
 # -------------------------------------------------------------------
 def set_alternative_score(alternative_id: int, criteria_id: int, value: float) -> int:
-    """Set nilai kandidat untuk suatu kriteria (insert atau update otomatis)."""
     try:
         value = float(value)
     except (ValueError, TypeError):
         raise ValueError("Nilai harus berupa angka.")
     try:
         with get_db() as conn:
-            # Coba insert
             cur = conn.execute("""
                 INSERT INTO alternative_scores (alternative_id, criteria_id, value)
                 VALUES (?, ?, ?)
@@ -314,7 +253,6 @@ def set_alternative_score(alternative_id: int, criteria_id: int, value: float) -
             return cur.lastrowid
     except sqlite3.IntegrityError as e:
         if "UNIQUE constraint failed" in str(e):
-            # Sudah ada, lakukan update
             with get_db() as conn:
                 conn.execute("""
                     UPDATE alternative_scores SET value = ? WHERE alternative_id = ? AND criteria_id = ?
@@ -328,7 +266,6 @@ def set_alternative_score(alternative_id: int, criteria_id: int, value: float) -
             raise
 
 def update_alternative_score(score_id: int, value: float) -> bool:
-    """Update nilai berdasarkan id score."""
     try:
         value = float(value)
     except (ValueError, TypeError):
@@ -338,13 +275,11 @@ def update_alternative_score(score_id: int, value: float) -> bool:
         return True
 
 def delete_alternative_score(score_id: int) -> bool:
-    """Hapus nilai berdasarkan id score."""
     with get_db() as conn:
         conn.execute("DELETE FROM alternative_scores WHERE id = ?", (score_id,))
         return True
 
 def get_alternative_scores(alternative_id: int) -> dict:
-    """Ambil semua nilai kandidat sebagai dict {criteria_id: value}."""
     with get_db_read() as conn:
         rows = conn.execute("""
             SELECT criteria_id, value FROM alternative_scores
@@ -353,10 +288,43 @@ def get_alternative_scores(alternative_id: int) -> dict:
         return {row['criteria_id']: row['value'] for row in rows}
 
 # -------------------------------------------------------------------
-# Pembuatan tabel (panggil saat inisialisasi aplikasi)
+# 6. Tabel cache department_rankings
+# -------------------------------------------------------------------
+def clear_department_rankings(department_id: int):
+    """Hapus cache peringkat untuk satu departemen."""
+    with get_db() as conn:
+        conn.execute("DELETE FROM department_rankings WHERE department_id = ?", (department_id,))
+
+def clear_all_rankings():
+    """Hapus seluruh cache peringkat (semua departemen)."""
+    with get_db() as conn:
+        conn.execute("DELETE FROM department_rankings")
+
+def save_department_ranking(department_id: int, rankings: list):
+    """Simpan hasil peringkat ke cache (list of dict dengan keys: alternative_id, ncf, nsf, total)."""
+    with get_db() as conn:
+        for r in rankings:
+            conn.execute("""
+                INSERT INTO department_rankings (department_id, alternative_id, ncf, nsf, total)
+                VALUES (?, ?, ?, ?, ?)
+            """, (department_id, r['alternative_id'], r['ncf'], r['nsf'], r['total']))
+
+def get_cached_ranking(department_id: int) -> list:
+    """Ambil peringkat dari cache (diurutkan total desc)."""
+    with get_db_read() as conn:
+        rows = conn.execute("""
+            SELECT dr.*, a.name as alternative_name
+            FROM department_rankings dr
+            JOIN alternatives a ON dr.alternative_id = a.id
+            WHERE dr.department_id = ?
+            ORDER BY dr.total DESC
+        """, (department_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+# -------------------------------------------------------------------
+# Pembuatan tabel
 # -------------------------------------------------------------------
 def create_tables():
-    """Buat semua tabel dan indeks jika belum ada."""
     with get_db() as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS departments (
@@ -385,11 +353,8 @@ def create_tables():
 
             CREATE TABLE IF NOT EXISTS alternatives (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                department_id INTEGER NOT NULL,
-                additional_info TEXT,
-                FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
-                UNIQUE(name, department_id)
+                name TEXT NOT NULL UNIQUE,
+                additional_info TEXT
             );
 
             CREATE TABLE IF NOT EXISTS alternative_scores (
@@ -402,9 +367,21 @@ def create_tables():
                 UNIQUE(alternative_id, criteria_id)
             );
 
+            CREATE TABLE IF NOT EXISTS department_rankings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                department_id INTEGER NOT NULL,
+                alternative_id INTEGER NOT NULL,
+                ncf REAL NOT NULL,
+                nsf REAL NOT NULL,
+                total REAL NOT NULL,
+                FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+                FOREIGN KEY (alternative_id) REFERENCES alternatives(id) ON DELETE CASCADE,
+                UNIQUE(department_id, alternative_id)
+            );
+
             CREATE INDEX IF NOT EXISTS idx_dept_profiles_dept ON department_profiles(department_id);
             CREATE INDEX IF NOT EXISTS idx_dept_profiles_criteria ON department_profiles(criteria_id);
-            CREATE INDEX IF NOT EXISTS idx_alternatives_dept ON alternatives(department_id);
             CREATE INDEX IF NOT EXISTS idx_alt_scores_alt ON alternative_scores(alternative_id);
             CREATE INDEX IF NOT EXISTS idx_alt_scores_criteria ON alternative_scores(criteria_id);
+            CREATE INDEX IF NOT EXISTS idx_dept_rankings_dept ON department_rankings(department_id);
         """)
