@@ -39,8 +39,8 @@ class AlternativePage(QWidget):
         layout.addLayout(toolbar)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["ID", "Nama", "Info Tambahan", "Aksi"])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["ID", "Nama", "NIM", "Prodi", "Kelas", "Info Tambahan", "Aksi"])
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -65,7 +65,10 @@ class AlternativePage(QWidget):
         for row, alt in enumerate(alts):
             self.table.setItem(row, 0, QTableWidgetItem(str(alt["id"])))
             self.table.setItem(row, 1, QTableWidgetItem(alt["name"]))
-            self.table.setItem(row, 2, QTableWidgetItem(alt["additional_info"] or ""))
+            self.table.setItem(row, 2, QTableWidgetItem(alt["nim"]))
+            self.table.setItem(row, 3, QTableWidgetItem(alt["prodi"]))
+            self.table.setItem(row, 4, QTableWidgetItem(alt["kelas"]))
+            self.table.setItem(row, 5, QTableWidgetItem(alt["additional_info"] or ""))
 
             actions_widget = QWidget()
             actions_layout = QHBoxLayout(actions_widget)
@@ -87,7 +90,7 @@ class AlternativePage(QWidget):
             actions_layout.addWidget(btn_detail)
             actions_layout.addWidget(btn_edit)
             actions_layout.addWidget(btn_delete)
-            self.table.setCellWidget(row, 3, actions_widget)
+            self.table.setCellWidget(row, 6, actions_widget)
 
     def open_add_dialog(self):
         dialog = AlternativeFormDialog(self, mode="add")
@@ -135,7 +138,19 @@ class AlternativeFormDialog(QDialog):
         self.info_input = QLineEdit()
         self.info_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
 
+        self.kelas_input = QLineEdit()
+        self.kelas_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+
+        self.prodi_input = QLineEdit()
+        self.prodi_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+
+        self.nim_input = QLineEdit()
+        self.nim_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+
         form.addRow("Nama:", self.name_input)
+        form.addRow("NIM:", self.nim_input)
+        form.addRow("Prodi:", self.prodi_input)
+        form.addRow("Kelas:", self.kelas_input)
         form.addRow("Info Tambahan:", self.info_input)
         layout.addLayout(form)
 
@@ -159,10 +174,16 @@ class AlternativeFormDialog(QDialog):
             row = conn.execute("SELECT * FROM alternatives WHERE id = ?", (self.alternative_id,)).fetchone()
             if row:
                 self.name_input.setText(row['name'])
+                self.kelas_input.setText(row['kelas'])
+                self.prodi_input.setText(row['prodi'])
+                self.nim_input.setText(row['nim'])
                 self.info_input.setText(row['additional_info'] or "")
 
     def save(self):
         name = self.name_input.text().strip()
+        nim = self.nim_input.text().strip()
+        kelas = self.kelas_input.text().strip()
+        prodi = self.prodi_input.text().strip()
         info = self.info_input.text().strip() or None
 
         if not name:
@@ -171,9 +192,16 @@ class AlternativeFormDialog(QDialog):
 
         try:
             if self.mode == "add":
-                create_alternative(name, info)
+                create_alternative(name, nim, prodi, kelas, info)
             else:
-                update_alternative(self.alternative_id, name=name, additional_info=info)
+                update_alternative(
+                    self.alternative_id,
+                    name=name,
+                    nim=nim,
+                    prodi=prodi,
+                    kelas=kelas,
+                    additional_info=info
+                )
             clear_all_rankings()   # invalidasi semua cache
             self.accept()
         except Exception as e:

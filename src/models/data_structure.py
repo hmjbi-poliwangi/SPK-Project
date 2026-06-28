@@ -113,13 +113,13 @@ def delete_criteria(criteria_id: int) -> bool:
 # -------------------------------------------------------------------
 # 3. CRUD Alternatives (tanpa department_id)
 # -------------------------------------------------------------------
-def create_alternative(name: str, additional_info: str = None) -> int:
+def create_alternative(name: str, nim: str, prodi: str, kelas: str, additional_info: str = None) -> int:
     """Tambah alternatif independen (tanpa departemen)."""
     try:
         with get_db() as conn:
             cur = conn.execute(
-                "INSERT INTO alternatives (name, additional_info) VALUES (?, ?)",
-                (name, additional_info)
+                "INSERT INTO alternatives (name, kelas, prodi, nim, additional_info) VALUES (?, ?, ?, ?, ?)",
+                (name, kelas, prodi, nim, additional_info)
             )
             return cur.lastrowid
     except sqlite3.IntegrityError:
@@ -137,13 +137,18 @@ def get_alternative_by_id(alternative_id: int) -> dict:
             raise ValueError(f"Alternative dengan id {alternative_id} tidak ditemukan.")
         return row
 
-def update_alternative(alternative_id: int, name: str = None,
-                       additional_info: str = None) -> bool:
+def update_alternative(alternative_id: int, name: str = None, nim: str = None, prodi: str = None, kelas: str = None, additional_info: str = None) -> bool:
     """Ubah data alternatif, tanpa departemen."""
     try:
         with get_db() as conn:
             if name is not None:
                 conn.execute("UPDATE alternatives SET name = ? WHERE id = ?", (name, alternative_id))
+            if nim is not None:
+                conn.execute("UPDATE alternatives SET nim = ? WHERE id = ?", (nim, alternative_id))
+            if prodi is not None:
+                conn.execute("UPDATE alternatives SET prodi = ? WHERE id = ?", (prodi, alternative_id))
+            if kelas is not None:
+                conn.execute("UPDATE alternatives SET kelas = ? WHERE id = ?", (kelas, alternative_id))
             if additional_info is not None:
                 conn.execute("UPDATE alternatives SET additional_info = ? WHERE id = ?", (additional_info, alternative_id))
             return True
@@ -354,6 +359,9 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS alternatives (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
+                kelas TEXT NOT NULL,
+                prodi TEXT,
+                nim TEXT NOT NULL,
                 additional_info TEXT
             );
 
