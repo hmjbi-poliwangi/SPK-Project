@@ -1,13 +1,15 @@
 # src/views/main_window.py
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QStackedWidget, QLabel, QFrame
+    QPushButton, QStackedWidget, QLabel, QFrame, QFileDialog,
+    QMessageBox
 )
 from PySide6.QtCore import Qt
 from src.views.home_page import HomePage
 from src.views.criteria_page import CriteriaPage
 from src.views.department_page import DepartmentPage
 from src.views.alternative_page import AlternativePage
+from src.views.import_export_dialog import ImportExportDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -52,6 +54,24 @@ class MainWindow(QMainWindow):
             QPushButton#exit_btn:hover {
                 background-color: #e74c3c;
             }
+            QPushButton#import_btn {
+                background-color: #2ecc71;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton#import_btn:hover {
+                background-color: #27ae60;
+                color: white;
+            }
+            QPushButton#export_btn {
+                background-color: #3498db;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton#export_btn:hover {
+                background-color: #2980b9;
+                color: white;
+            }
         """)
 
         sidebar_layout = QVBoxLayout(sidebar)
@@ -70,6 +90,13 @@ class MainWindow(QMainWindow):
         self.btn_kriteria = QPushButton("📋  Kriteria")
         self.btn_departemen = QPushButton("🏢  Departemen")
         self.btn_alternatif = QPushButton("👥  Alternatif")
+
+        # Tombol Import/Export
+        self.btn_import = QPushButton("📥  Import Data")
+        self.btn_import.setObjectName("import_btn")
+        self.btn_export = QPushButton("📤  Export Data")
+        self.btn_export.setObjectName("export_btn")
+
         self.btn_exit = QPushButton("🚪  Keluar")
         self.btn_exit.setObjectName("exit_btn")
 
@@ -77,6 +104,9 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(self.btn_kriteria)
         sidebar_layout.addWidget(self.btn_departemen)
         sidebar_layout.addWidget(self.btn_alternatif)
+        sidebar_layout.addSpacing(10)
+        sidebar_layout.addWidget(self.btn_import)
+        sidebar_layout.addWidget(self.btn_export)
         sidebar_layout.addStretch()
         sidebar_layout.addWidget(self.btn_exit)
 
@@ -104,15 +134,14 @@ class MainWindow(QMainWindow):
         self.btn_kriteria.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
         self.btn_departemen.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
         self.btn_alternatif.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
+        self.btn_import.clicked.connect(self.open_import_dialog)
+        self.btn_export.clicked.connect(self.open_export_dialog)
         self.btn_exit.clicked.connect(self.close)
 
-    def _create_placeholder_page(self, title):
-        """Buat halaman sementara dengan label besar."""
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label = QLabel(title)
-        label.setStyleSheet("font-size: 32px; color: #bdc3c7;")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
-        return page
+    def open_import_dialog(self):
+        dialog = ImportExportDialog(self, mode="import")
+        dialog.exec()
+
+    def open_export_dialog(self):
+        dialog = ImportExportDialog(self, mode="export")
+        dialog.exec()

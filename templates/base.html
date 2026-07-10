@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPK Profile Matching</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">Menu Utama</div>
+            <a href="/" class="nav-btn" data-page="home">🏠  Beranda</a>
+            <a href="/criteria" class="nav-btn" data-page="criteria">📋  Kriteria</a>
+            <a href="/departments" class="nav-btn" data-page="departments">🏢  Departemen</a>
+            <a href="/alternatives" class="nav-btn" data-page="alternatives">👥  Alternatif</a>
+            <a href="#" class="nav-btn exit-btn" onclick="event.preventDefault(); window.close();">🚪  Keluar</a>
+        </nav>
+
+        <!-- Content -->
+        <main class="content">
+            <div id="alert-container"></div>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -47,7 +47,7 @@ class DepartmentPage(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["ID", "Nama Departemen", "Jumlah Profil", "Aksi"])
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setStyleSheet("""
@@ -195,7 +195,7 @@ class DepartmentDetailDialog(QDialog):
         self.profile_table = QTableWidget()
         self.profile_table.setColumnCount(6)
         self.profile_table.setHorizontalHeaderLabels(["ID", "Kriteria", "Target", "Bobot", "Tipe", "Aksi"])
-        self.profile_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.profile_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
         self.profile_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.profile_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.profile_table.setStyleSheet("""
@@ -435,7 +435,7 @@ class RankingDialog(QDialog):
         table = QTableWidget()
         table.setColumnCount(4)
         table.setHorizontalHeaderLabels(["Nama Alternatif", "NCF", "NSF", "Total Skor"])
-        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         table.setStyleSheet("""

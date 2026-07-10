@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-info">
+    <h1 class="page-title" style="margin-bottom:0;">🏢 {{ department.name }}</h1>
+    <div class="btn-group">
+        <a href="/departments" class="btn btn-gray btn-sm">← Kembali</a>
+        <button class="btn btn-blue btn-sm" onclick="renameDepartment()">Ubah Nama</button>
+    </div>
+</div>
+
+<h3 style="color:#f0f0f0;margin-bottom:10px;">Kriteria & Bobot:</h3>
+
+<table class="data-table" id="profile-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th style="width:auto">Kriteria</th>
+            <th>Target</th>
+            <th>Bobot</th>
+            <th>Tipe</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="profile-table-body"></tbody>
+</table>
+
+<div class="toolbar mt-10">
+    <button class="btn btn-green" onclick="openProfileModal()">+ Tambah Kriteria</button>
+    <button class="btn btn-purple" onclick="showRanking()">🏆 Peringkat Alternatif</button>
+</div>
+
+<!-- Modal Rename -->
+<div class="modal-overlay" id="rename-modal">
+    <div class="modal-dialog">
+        <h3>Ubah Nama Departemen</h3>
+        <div class="form-group">
+            <label>Nama Departemen</label>
+            <input type="text" id="rename-input" class="form-input" value="{{ department.name }}">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-gray" onclick="closeModal('rename-modal')">Batal</button>
+            <button class="btn btn-green" onclick="saveRename()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Profile -->
+<div class="modal-overlay" id="profile-modal">
+    <div class="modal-dialog">
+        <h3 id="profile-modal-title">Tambah Profil</h3>
+        <input type="hidden" id="profile-edit-id">
+        <div class="form-group">
+            <label for="profile-criteria">Kriteria</label>
+            <select id="profile-criteria" class="form-select"></select>
+        </div>
+        <div class="form-group">
+            <label for="profile-target">Target Value</label>
+            <input type="number" id="profile-target" class="form-input" step="0.01" min="0" value="0">
+        </div>
+        <div class="form-group">
+            <label for="profile-weight">Bobot (0-1)</label>
+            <input type="number" id="profile-weight" class="form-input" step="0.001" min="0" max="1" value="0.5">
+        </div>
+        <div class="form-group">
+            <label>Tipe Faktor</label>
+            <div class="radio-group">
+                <label><input type="radio" name="profile-type" value="core" checked> Core</label>
+                <label><input type="radio" name="profile-type" value="secondary"> Secondary</label>
+            </div>
+        </div>
+        <div class="form-group" id="profile-active-group" style="display:none;">
+            <label><input type="checkbox" id="profile-active" class="form-checkbox" checked> Profil Aktif</label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-gray" onclick="closeModal('profile-modal')">Batal</button>
+            <button class="btn btn-green" onclick="saveProfile()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ranking -->
+<div class="modal-overlay" id="ranking-modal">
+    <div class="modal-dialog" style="min-width:500px;">
+        <h3>Hasil Peringkat Alternatif</h3>
+        <table class="data-table ranking-table" id="ranking-table">
+            <thead>
+                <tr>
+                    <th style="width:auto">Nama Alternatif</th>
+                    <th>NCF</th>
+                    <th>NSF</th>
+                    <th>Total Skor</th>
+                </tr>
+            </thead>
+            <tbody id="ranking-table-body">
+                <tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>
+            </tbody>
+        </table>
+        <div class="modal-actions">
+            <button class="btn btn-gray" onclick="closeModal('ranking-modal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="dept-id" value="{{ department.id }}">
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DEPT_ID = parseInt(document.getElementById('dept-id').value, 10);
+
+// ============================================================
+// Profiles
+// ============================================================
+
+function loadProfiles() {
+    fetch(`/api/departments/${DEPT_ID}/profiles`)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('profile-table-body');
+            tbody.innerHTML = '';
+            data.forEach(p => {
+                let typeDisplay = p.type === 'core' ? 'Core' : 'Secondary';
+                if (!p.is_active) typeDisplay += ' (nonaktif)';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${p.id}</td>
+                    <td>${escapeHtml(p.criteria_name)}</td>
+                    <td>${p.target_value}</td>
+                    <td>${p.weight.toFixed(3)}</td>
+                    <td>${typeDisplay}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-orange btn-sm" onclick="editProfile(${p.id})">Edit</button>
+                            <button class="btn btn-red btn-sm" onclick="deleteProfile(${p.id})">Hapus</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+}
+
+function loadCriteriaSelect() {
+    fetch('/api/criteria')
+        .then(r => r.json())
+        .then(data => {
+            const sel = document.getElementById('profile-criteria');
+            sel.innerHTML = '';
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                sel.appendChild(opt);
+            });
+        });
+}
+
+function openProfileModal() {
+    document.getElementById('profile-modal-title').textContent = 'Tambah Profil';
+    document.getElementById('profile-edit-id').value = '';
+    document.getElementById('profile-target').value = 0;
+    document.getElementById('profile-weight').value = 0.5;
+    document.querySelector('input[name="profile-type"][value="core"]').checked = true;
+    document.getElementById('profile-active-group').style.display = 'none';
+    openModal('profile-modal');
+}
+
+function editProfile(id) {
+    // Need to fetch profile detail - we'll fetch profiles and find by id
+    fetch(`/api/departments/${DEPT_ID}/profiles`)
+        .then(r => r.json())
+        .then(profiles => {
+            const p = profiles.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('profile-modal-title').textContent = 'Edit Profil';
+            document.getElementById('profile-edit-id').value = p.id;
+            // Set criteria
+            const sel = document.getElementById('profile-criteria');
+            for (let i = 0; i < sel.options.length; i++) {
+                if (parseInt(sel.options[i].value) === p.criteria_id) {
+                    sel.selectedIndex = i;
+                    break;
+                }
+            }
+            document.getElementById('profile-target').value = p.target_value;
+            document.getElementById('profile-weight').value = p.weight;
+            document.querySelector(`input[name="profile-type"][value="${p.type}"]`).checked = true;
+            document.getElementById('profile-active').checked = !!p.is_active;
+            document.getElementById('profile-active-group').style.display = 'block';
+            openModal('profile-modal');
+        });
+}
+
+function saveProfile() {
+    const id = document.getElementById('profile-edit-id').value;
+    const criteria_id = document.getElementById('profile-criteria').value;
+    const target_value = parseFloat(document.getElementById('profile-target').value);
+    const weight = parseFloat(document.getElementById('profile-weight').value);
+    const type_ = document.querySelector('input[name="profile-type"]:checked').value;
+    const is_active = document.getElementById('profile-active').checked ? 1 : 0;
+
+    if (!criteria_id) {
+        showAlert('Pilih kriteria terlebih dahulu', 'error');
+        return;
+    }
+
+    if (id) {
+        // Update profile
+        fetch(`/api/profiles/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({target_value, weight, type: type_, is_active})
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.error) { showAlert(res.error, 'error'); return; }
+            closeModal('profile-modal');
+            loadProfiles();
+            showAlert(res.message, 'success');
+        });
+    } else {
+        // Add profile
+        fetch(`/api/departments/${DEPT_ID}/profiles`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({criteria_id: parseInt(criteria_id), target_value, weight, type: type_})
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.error) { showAlert(res.error, 'error'); return; }
+            closeModal('profile-modal');
+            loadProfiles();
+            showAlert(res.message, 'success');
+        });
+    }
+}
+
+function deleteProfile(id) {
+    if (!confirm('Hapus profil ini?')) return;
+    fetch(`/api/profiles/${id}`, {method: 'DELETE'})
+        .then(r => r.json())
+        .then(res => {
+            if (res.error) { showAlert(res.error, 'error'); return; }
+            loadProfiles();
+            showAlert(res.message, 'success');
+        });
+}
+
+// ============================================================
+// Rename
+// ============================================================
+
+function renameDepartment() {
+    document.getElementById('rename-input').value = document.querySelector('.page-title').textContent.replace('🏢 ', '');
+    openModal('rename-modal');
+}
+
+function saveRename() {
+    const name = document.getElementById('rename-input').value.trim();
+    if (!name) { showAlert('Nama departemen harus diisi', 'error'); return; }
+    fetch(`/api/departments/${DEPT_ID}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name})
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.error) { showAlert(res.error, 'error'); return; }
+        closeModal('rename-modal');
+        document.querySelector('.page-title').textContent = '🏢 ' + name;
+        showAlert(res.message, 'success');
+    });
+}
+
+// ============================================================
+// Ranking
+// ============================================================
+
+function showRanking() {
+    openModal('ranking-modal');
+    document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>';
+    fetch(`/api/departments/${DEPT_ID}/ranking`)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('ranking-table-body');
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#95a5a6;">Belum ada data peringkat.</td></tr>';
+                return;
+            }
+            data.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold;color:#ecec13;">${escapeHtml(r.name)}</td>
+                    <td>${r.ncf.toFixed(3)}</td>
+                    <td>${r.nsf.toFixed(3)}</td>
+                    <td>${r.total.toFixed(3)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#e74c3c;">Gagal memuat peringkat.</td></tr>';
+        });
+}
+
+// ============================================================
+// Init
+// ============================================================
+
+loadCriteriaSelect();
+loadProfiles();
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="header-info">
+    <h1 class="page-title" style="margin-bottom:0;">Nilai untuk: {{ alternative.name }}</h1>
+    <a href="/alternatives" class="btn btn-gray btn-sm">← Kembali</a>
+</div>
+
+<div id="scores-container"></div>
+
+<div class="mt-20">
+    <button class="btn btn-green" onclick="saveAllScores()">Simpan Semua Nilai</button>
+</div>
+
+<input type="hidden" id="alt-id" value="{{ alternative.id }}">
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ALT_ID = parseInt(document.getElementById('alt-id').value, 10);
+
+function loadScores() {
+    const container = document.getElementById('scores-container');
+    container.innerHTML = '<p style="color:#95a5a6;">Memuat...</p>';
+
+    Promise.all([
+        fetch('/api/criteria').then(r => r.json()),
+        fetch(`/api/alternatives/${ALT_ID}/scores`).then(r => r.json())
+    ])
+    .then(([criteriaList, currentScores]) => {
+        container.innerHTML = '';
+        const list = document.createElement('div');
+        list.className = 'score-list';
+
+        criteriaList.forEach(c => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #444;';
+
+            const label = document.createElement('span');
+            label.className = 'score-label';
+            label.textContent = c.name;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = '0.01';
+            input.min = '0';
+            input.max = '9999';
+            input.value = currentScores[c.id] || 0;
+            input.style.cssText = 'width:120px;padding:5px;background-color:#1d1d1d;color:white;border:1px solid #555;border-radius:3px;';
+            input.dataset.criteriaId = c.id;
+
+            item.appendChild(label);
+            item.appendChild(input);
+            container.appendChild(item);
+        });
+
+        if (criteriaList.length === 0) {
+            container.innerHTML = '<p style="color:#95a5a6;">Belum ada kriteria. Silakan tambah kriteria terlebih dahulu.</p>';
+        }
+    });
+}
+
+function saveAllScores() {
+    const inputs = document.querySelectorAll('#scores-container input[type="number"]');
+    const scores = {};
+    inputs.forEach(input => {
+        const criteriaId = input.dataset.criteriaId;
+        scores[criteriaId] = parseFloat(input.value) || 0;
+    });
+
+    fetch(`/api/alternatives/${ALT_ID}/scores`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({scores})
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.error) {
+            showAlert(res.error, 'error');
+        } else {
+            showAlert(res.message, 'success');
+        }
+    });
+}
+
+loadScores();
+</script>
+{% endblock %}

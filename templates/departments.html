@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title">🏢 Manajemen Departemen</h1>
+
+<div class="toolbar">
+    <button class="btn btn-yellow" onclick="openDeptModal()">+ Tambah Departemen</button>
+</div>
+
+<table class="data-table" id="dept-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th style="width:auto">Nama Departemen</th>
+            <th>Jumlah Profil</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="dept-table-body"></tbody>
+</table>
+
+<!-- Modal Tambah/Edit Departemen -->
+<div class="modal-overlay" id="dept-modal">
+    <div class="modal-dialog">
+        <h3 id="dept-modal-title">Tambah Departemen</h3>
+        <input type="hidden" id="dept-edit-id">
+        <div class="form-group">
+            <label for="dept-name">Nama Departemen</label>
+            <input type="text" id="dept-name" class="form-input" placeholder="Masukkan nama departemen">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-gray" onclick="closeModal('dept-modal')">Batal</button>
+            <button class="btn btn-green" onclick="saveDepartment()">Simpan</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ============================================================
+// CRUD Departments
+// ============================================================
+
+function loadDepartments() {
+    fetch('/api/departments')
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('dept-table-body');
+            tbody.innerHTML = '';
+            data.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${d.id}</td>
+                    <td><a href="/departments/${d.id}" style="color:#ecec13;text-decoration:none;">${escapeHtml(d.name)}</a></td>
+                    <td>${d.active_profiles}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="/departments/${d.id}" class="btn btn-purple btn-sm">Detail</a>
+                            <button class="btn btn-blue btn-sm" onclick="editDepartment(${d.id}, '${escapeHtml(d.name)}')">Edit</button>
+                            <button class="btn btn-red btn-sm" onclick="deleteDepartment(${d.id})">Hapus</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+}
+
+function openDeptModal() {
+    document.getElementById('dept-modal-title').textContent = 'Tambah Departemen';
+    document.getElementById('dept-edit-id').value = '';
+    document.getElementById('dept-name').value = '';
+    openModal('dept-modal');
+}
+
+function editDepartment(id, name) {
+    document.getElementById('dept-modal-title').textContent = 'Ubah Nama Departemen';
+    document.getElementById('dept-edit-id').value = id;
+    document.getElementById('dept-name').value = name;
+    openModal('dept-modal');
+}
+
+function saveDepartment() {
+    const id = document.getElementById('dept-edit-id').value;
+    const name = document.getElementById('dept-name').value.trim();
+
+    if (!name) {
+        showAlert('Nama departemen harus diisi', 'error');
+        return;
+    }
+
+    const url = id ? `/api/departments/${id}` : '/api/departments';
+    const method = id ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name})
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.error) {
+            showAlert(res.error, 'error');
+        } else {
+            closeModal('dept-modal');
+            loadDepartments();
+            showAlert(res.message, 'success');
+        }
+    });
+}
+
+function deleteDepartment(id) {
+    if (!confirm('Hapus departemen ini? Semua profil dan alternatif akan terhapus.')) return;
+    fetch(`/api/departments/${id}`, {method: 'DELETE'})
+        .then(r => r.json())
+        .then(res => {
+            if (res.error) {
+                showAlert(res.error, 'error');
+            } else {
+                loadDepartments();
+                showAlert(res.message, 'success');
+            }
+        });
+}
+
+loadDepartments();
+</script>
+{% endblock %}
