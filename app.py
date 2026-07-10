@@ -40,7 +40,7 @@ def departments_page():
 def department_detail_page(dept_id):
     try:
         dept = get_department_by_id(dept_id)
-        return render_template('department_detail.html', department=dict(dept))
+        return render_template('department_detail.html', department=dept)
     except ValueError:
         return render_template('404.html'), 404
 
@@ -52,7 +52,7 @@ def alternatives_page():
 def alternative_scores_page(alt_id):
     try:
         alt = get_alternative_by_id(alt_id)
-        return render_template('alternative_scores.html', alternative=dict(alt))
+        return render_template('alternative_scores.html', alternative=alt)
     except ValueError:
         return render_template('404.html'), 404
 
@@ -62,42 +62,51 @@ def alternative_scores_page(alt_id):
 
 @app.route('/api/criteria', methods=['GET'])
 def api_get_criteria():
-    criteria_list = get_all_criteria()
-    return jsonify([dict(row) for row in criteria_list])
+    try:
+        criteria_list = get_all_criteria()
+        return jsonify(criteria_list)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/criteria/<int:criteria_id>', methods=['GET'])
 def api_get_criteria_by_id(criteria_id):
     try:
         crit = get_criteria_by_id(criteria_id)
-        return jsonify(dict(crit))
+        return jsonify(crit)
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/criteria', methods=['POST'])
 def api_create_criteria():
-    data = request.get_json()
-    name = data.get('name', '').strip()
-    description = data.get('description', '').strip() or None
-    if not name:
-        return jsonify({'error': 'Nama kriteria harus diisi'}), 400
     try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip() or None
+        if not name:
+            return jsonify({'error': 'Nama kriteria harus diisi'}), 400
         crit_id = create_criteria(name, description)
         return jsonify({'id': crit_id, 'message': 'Kriteria berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/criteria/<int:criteria_id>', methods=['PUT'])
 def api_update_criteria(criteria_id):
-    data = request.get_json()
-    name = data.get('name', '').strip()
-    description = data.get('description', '').strip() or None
-    if not name:
-        return jsonify({'error': 'Nama kriteria harus diisi'}), 400
     try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip() or None
+        if not name:
+            return jsonify({'error': 'Nama kriteria harus diisi'}), 400
         update_criteria(criteria_id, name, description)
         return jsonify({'message': 'Kriteria berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/criteria/<int:criteria_id>', methods=['DELETE'])
 def api_delete_criteria(criteria_id):
@@ -105,7 +114,7 @@ def api_delete_criteria(criteria_id):
         delete_criteria(criteria_id)
         return jsonify({'message': 'Kriteria berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================
 # API: Departments
@@ -113,46 +122,54 @@ def api_delete_criteria(criteria_id):
 
 @app.route('/api/departments', methods=['GET'])
 def api_get_departments():
-    departments = get_all_departments()
-    result = []
-    for dept in departments:
-        dept_dict = dict(dept)
-        profiles = get_department_profiles(dept['id'], active_only=False)
-        dept_dict['active_profiles'] = sum(1 for p in profiles if p['is_active'])
-        result.append(dept_dict)
-    return jsonify(result)
+    try:
+        departments = get_all_departments()
+        result = []
+        for dept in departments:
+            profiles = get_department_profiles(dept['id'], active_only=False)
+            dept['active_profiles'] = sum(1 for p in profiles if p['is_active'])
+            result.append(dept)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/departments/<int:dept_id>', methods=['GET'])
 def api_get_department(dept_id):
     try:
         dept = get_department_by_id(dept_id)
-        return jsonify(dict(dept))
+        return jsonify(dept)
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/departments', methods=['POST'])
 def api_create_department():
-    data = request.get_json()
-    name = data.get('name', '').strip()
-    if not name:
-        return jsonify({'error': 'Nama departemen harus diisi'}), 400
     try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'error': 'Nama departemen harus diisi'}), 400
         dept_id = create_department(name)
         return jsonify({'id': dept_id, 'message': 'Departemen berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/departments/<int:dept_id>', methods=['PUT'])
 def api_update_department(dept_id):
-    data = request.get_json()
-    name = data.get('name', '').strip()
-    if not name:
-        return jsonify({'error': 'Nama departemen harus diisi'}), 400
     try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'error': 'Nama departemen harus diisi'}), 400
         update_department(dept_id, name)
         return jsonify({'message': 'Departemen berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/departments/<int:dept_id>', methods=['DELETE'])
 def api_delete_department(dept_id):
@@ -160,7 +177,7 @@ def api_delete_department(dept_id):
         delete_department(dept_id)
         return jsonify({'message': 'Departemen berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================
 # API: Department Profiles
@@ -168,46 +185,48 @@ def api_delete_department(dept_id):
 
 @app.route('/api/departments/<int:dept_id>/profiles', methods=['GET'])
 def api_get_profiles(dept_id):
-    profiles = get_department_profiles(dept_id)
-    return jsonify([dict(row) for row in profiles])
+    try:
+        profiles = get_department_profiles(dept_id)
+        return jsonify(profiles)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/departments/<int:dept_id>/profiles', methods=['POST'])
 def api_add_profile(dept_id):
-    data = request.get_json()
-    criteria_id = data.get('criteria_id')
-    target_value = data.get('target_value')
-    weight = data.get('weight')
-    type_ = data.get('type', 'secondary')
-
-    if not all([criteria_id, target_value is not None, weight is not None]):
-        return jsonify({'error': 'Semua field harus diisi'}), 400
-
     try:
+        data = request.get_json()
+        criteria_id = data.get('criteria_id')
+        target_value = data.get('target_value')
+        weight = data.get('weight')
+        type_ = data.get('type', 'secondary')
+
+        if not all([criteria_id, target_value is not None, weight is not None]):
+            return jsonify({'error': 'Semua field harus diisi'}), 400
+
         profile_id = add_department_profile(dept_id, int(criteria_id), float(target_value), float(weight), type_)
         clear_department_rankings(dept_id)
         return jsonify({'id': profile_id, 'message': 'Profil berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/profiles/<int:profile_id>', methods=['PUT'])
 def api_update_profile(profile_id):
-    data = request.get_json()
-    target_value = data.get('target_value')
-    weight = data.get('weight')
-    type_ = data.get('type')
-    is_active = data.get('is_active')
-
     try:
+        data = request.get_json()
         update_department_profile(
             profile_id,
-            target_value=float(target_value) if target_value is not None else None,
-            weight=float(weight) if weight is not None else None,
-            type_=type_,
-            is_active=is_active
+            target_value=float(data['target_value']) if data.get('target_value') is not None else None,
+            weight=float(data['weight']) if data.get('weight') is not None else None,
+            type_=data.get('type'),
+            is_active=data.get('is_active')
         )
         return jsonify({'message': 'Profil berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/profiles/<int:profile_id>', methods=['DELETE'])
 def api_delete_profile(profile_id):
@@ -215,7 +234,7 @@ def api_delete_profile(profile_id):
         delete_department_profile(profile_id)
         return jsonify({'message': 'Profil berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================
 # API: Ranking
@@ -227,7 +246,7 @@ def api_get_ranking(dept_id):
         rankings = rank_alternatives(dept_id)
         return jsonify(rankings)
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================
 # API: Alternatives
@@ -235,54 +254,63 @@ def api_get_ranking(dept_id):
 
 @app.route('/api/alternatives', methods=['GET'])
 def api_get_alternatives():
-    alts = get_all_alternatives()
-    return jsonify([dict(row) for row in alts])
+    try:
+        alts = get_all_alternatives()
+        return jsonify(alts)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/alternatives/<int:alt_id>', methods=['GET'])
 def api_get_alternative(alt_id):
     try:
         alt = get_alternative_by_id(alt_id)
-        return jsonify(dict(alt))
+        return jsonify(alt)
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/alternatives', methods=['POST'])
 def api_create_alternative():
-    data = request.get_json()
-    name = data.get('name', '').strip()
-    nim = data.get('nim', '').strip()
-    prodi = data.get('prodi', '').strip()
-    kelas = data.get('kelas', '').strip()
-    additional_info = data.get('additional_info', '').strip() or None
-
-    if not name:
-        return jsonify({'error': 'Nama harus diisi'}), 400
-
     try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        nim = data.get('nim', '').strip()
+        prodi = data.get('prodi', '').strip()
+        kelas = data.get('kelas', '').strip()
+        additional_info = data.get('additional_info', '').strip() or None
+
+        if not name:
+            return jsonify({'error': 'Nama harus diisi'}), 400
+
         alt_id = create_alternative(name, nim, prodi, kelas, additional_info)
         clear_all_rankings()
         return jsonify({'id': alt_id, 'message': 'Alternatif berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/alternatives/<int:alt_id>', methods=['PUT'])
 def api_update_alternative(alt_id):
-    data = request.get_json()
-    name = data.get('name', '').strip()
-    nim = data.get('nim', '').strip()
-    prodi = data.get('prodi', '').strip()
-    kelas = data.get('kelas', '').strip()
-    additional_info = data.get('additional_info', '').strip() or None
-
-    if not name:
-        return jsonify({'error': 'Nama harus diisi'}), 400
-
     try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        nim = data.get('nim', '').strip()
+        prodi = data.get('prodi', '').strip()
+        kelas = data.get('kelas', '').strip()
+        additional_info = data.get('additional_info', '').strip() or None
+
+        if not name:
+            return jsonify({'error': 'Nama harus diisi'}), 400
+
         update_alternative(alt_id, name=name, nim=nim, prodi=prodi, kelas=kelas, additional_info=additional_info)
         clear_all_rankings()
         return jsonify({'message': 'Alternatif berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/alternatives/<int:alt_id>', methods=['DELETE'])
 def api_delete_alternative(alt_id):
@@ -291,7 +319,7 @@ def api_delete_alternative(alt_id):
         clear_all_rankings()
         return jsonify({'message': 'Alternatif berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================
 # API: Alternative Scores
@@ -299,20 +327,23 @@ def api_delete_alternative(alt_id):
 
 @app.route('/api/alternatives/<int:alt_id>/scores', methods=['GET'])
 def api_get_scores(alt_id):
-    scores = get_alternative_scores(alt_id)
-    return jsonify(scores)
+    try:
+        scores = get_alternative_scores(alt_id)
+        return jsonify(scores)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/alternatives/<int:alt_id>/scores', methods=['POST'])
 def api_save_scores(alt_id):
-    data = request.get_json()
-    scores = data.get('scores', {})
     try:
+        data = request.get_json()
+        scores = data.get('scores', {})
         for criteria_id, value in scores.items():
             set_alternative_score(alt_id, int(criteria_id), float(value))
         clear_all_rankings()
         return jsonify({'message': 'Nilai berhasil disimpan'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================
 # API: Export / Import Data
@@ -392,7 +423,7 @@ def api_export_json():
         response.headers['Content-Disposition'] = 'attachment; filename=spk_export.json'
         return response
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/export/pdf', methods=['GET'])
@@ -415,7 +446,7 @@ def api_export_pdf():
         response.headers['Content-Disposition'] = 'attachment; filename=spk_laporan.pdf'
         return response
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/export/department/<int:dept_id>/pdf', methods=['GET'])
@@ -438,7 +469,7 @@ def api_export_department_pdf(dept_id):
         response.headers['Content-Disposition'] = f'attachment; filename=ranking_{dept["name"]}.pdf'
         return response
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/import/json', methods=['POST'])
@@ -454,16 +485,13 @@ def api_import_json():
         if errors:
             return jsonify({'error': 'Validasi gagal', 'details': errors}), 400
 
-        supabase = __import__('src.models.supabase_db', fromlist=['get_supabase']).get_supabase()
-
         # 1. Import criteria
-        criteria_map = {}  # old_id -> new_id
+        criteria_map = {}
         for c in data.get("criteria", []):
             try:
                 new_id = create_criteria(c["name"], c.get("description"))
                 criteria_map[c.get("id")] = new_id
             except Exception:
-                # Skip jika sudah ada
                 pass
 
         # 2. Import departments
@@ -519,7 +547,7 @@ def api_import_json():
         }}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 
 # ============================================================
