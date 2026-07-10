@@ -56,6 +56,10 @@ def alternative_scores_page(alt_id):
     except ValueError:
         return render_template('404.html'), 404
 
+@app.route('/import-export')
+def import_export_page():
+    return render_template('import_export.html')
+
 # ============================================================
 # API: Criteria
 # ============================================================

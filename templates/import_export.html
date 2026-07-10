@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title">📦 Import / Export Data</h1>
+
+<div class="ie-container">
+    <!-- EXPORT SECTION -->
+    <div class="ie-card">
+        <h2 class="ie-card-title">📤 Export Data</h2>
+        <p class="ie-card-desc">Download seluruh data aplikasi ke format JSON atau PDF.</p>
+        <div class="ie-actions">
+            <button class="btn btn-blue" onclick="exportJSON()">
+                ⬇ Export JSON
+            </button>
+            <button class="btn btn-purple" onclick="exportPDF()">
+                ⬇ Export PDF (Laporan Lengkap)
+            </button>
+        </div>
+        <div id="export-status" class="ie-status"></div>
+    </div>
+
+    <!-- IMPORT SECTION -->
+    <div class="ie-card">
+        <h2 class="ie-card-title">📥 Import Data (JSON)</h2>
+        <p class="ie-card-desc">Upload file JSON untuk mengimport data ke aplikasi.</p>
+        <div class="form-group">
+            <label for="import-file" class="form-label">Pilih file JSON:</label>
+            <input type="file" id="import-file" class="form-input" accept=".json">
+        </div>
+        <div id="import-preview" class="ie-preview">
+            <p class="text-muted">Belum ada file dipilih.</p>
+        </div>
+        <button class="btn btn-green" onclick="importJSON()" id="btn-import" disabled>
+            📥 Import Data
+        </button>
+        <div id="import-status" class="ie-status"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ============================================================
+// Export JSON
+// ============================================================
+function exportJSON() {
+    const status = document.getElementById('export-status');
+    status.innerHTML = '<span class="text-info">⏳ Memproses export JSON...</span>';
+    
+    fetch('/api/export/json')
+        .then(r => {
+            if (!r.ok) throw new Error('Gagal export');
+            return r.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'spk_export.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            status.innerHTML = '<span class="text-success">✅ Export JSON berhasil!</span>';
+        })
+        .catch(err => {
+            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+        });
+}
+
+// ============================================================
+// Export PDF
+// ============================================================
+function exportPDF() {
+    const status = document.getElementById('export-status');
+    status.innerHTML = '<span class="text-info">⏳ Memproses export PDF...</span>';
+    
+    fetch('/api/export/pdf')
+        .then(r => {
+            if (!r.ok) throw new Error('Gagal export');
+            return r.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'spk_laporan.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            status.innerHTML = '<span class="text-success">✅ Export PDF berhasil!</span>';
+        })
+        .catch(err => {
+            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+        });
+}
+
+// ============================================================
+// Import JSON
+// ============================================================
+document.getElementById('import-file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('import-preview');
+    const btn = document.getElementById('btn-import');
+    
+    if (!file) {
+        preview.innerHTML = '<p class="text-muted">Belum ada file dipilih.</p>';
+        btn.disabled = true;
+        return;
+    }
+    
+    // Preview file
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const content = ev.target.result;
+        const previewText = content.length > 500 ? content.substring(0, 500) + '...' : content;
+        preview.innerHTML = `
+            <p><strong>File:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)</p>
+            <pre class="ie-pre">${escapeHtml(previewText)}</pre>
+        `;
+        btn.disabled = false;
+    };
+    reader.readAsText(file);
+});
+
+function importJSON() {
+    const fileInput = document.getElementById('import-file');
+    const file = fileInput.files[0];
+    const status = document.getElementById('import-status');
+    
+    if (!file) {
+        showAlert('Pilih file JSON terlebih dahulu', 'error');
+        return;
+    }
+    
+    status.innerHTML = '<span class="text-info">⏳ Mengimport data...</span>';
+    
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        try {
+            const data = JSON.parse(ev.target.result);
+            
+            fetch('/api/import/json', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.error) {
+                    status.innerHTML = '<span class="text-error">❌ ' + res.error + '</span>';
+                    if (res.details) {
+                        status.innerHTML += '<br><small>' + res.details.join('<br>') + '</small>';
+                    }
+                } else {
+                    status.innerHTML = '<span class="text-success">✅ Import berhasil! ' +
+                        'Kriteria: ' + res.detail.criteria + ', ' +
+                        'Departemen: ' + res.detail.departments + ', ' +
+                        'Alternatif: ' + res.detail.alternatives + '</span>';
+                    fileInput.value = '';
+                    document.getElementById('import-preview').innerHTML = '<p class="text-muted">Belum ada file dipilih.</p>';
+                    document.getElementById('btn-import').disabled = true;
+                }
+            })
+            .catch(err => {
+                status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+            });
+            
+        } catch (e) {
+            status.innerHTML = '<span class="text-error">❌ File JSON tidak valid: ' + e.message + '</span>';
+        }
+    };
+    reader.readAsText(file);
+}
+</script>
+{% endblock %}
