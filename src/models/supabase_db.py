@@ -97,17 +97,24 @@ CREATE INDEX IF NOT EXISTS idx_dept_rankings_dept ON department_rankings(departm
 
 
 def create_tables():
-    """Jalankan SQL untuk membuat tabel di Supabase (via REST)."""
-    supabase = get_supabase()
-    # Split per statement dan eksekusi satu per satu
-    statements = [s.strip() for s in CREATE_TABLES_SQL.split(";") if s.strip()]
-    for stmt in statements:
-        try:
-            supabase.rpc("exec_sql", {"sql": stmt}).execute()
-        except Exception:
-            # Jika RPC exec_sql tidak tersedia, lewati — tabel bisa dibuat
-            # manual via Supabase SQL Editor
-            pass
+    """
+    Informasi pembuatan tabel untuk Supabase.
+    
+    Fungsi ini tidak bisa otomatis membuat tabel karena Supabase
+    tidak mengizinkan eksekusi SQL via REST API tanpa setup khusus.
+    
+    WAJIB: Buat tabel manual via Supabase Dashboard:
+    1. Buka https://supabase.com → dashboard project kamu
+    2. Klik "SQL Editor" di sidebar kiri
+    3. Klik "New Query"
+    4. Copy paste SQL dari CREATE_TABLES_SQL di file ini
+    5. Klik "Run" (▶️)
+    """
+    import warnings
+    warnings.warn(
+        "Tabel Supabase belum dibuat! Jalankan SQL dari CREATE_TABLES_SQL "
+        "via Supabase SQL Editor. Lihat file DEPLOY_GUIDE.md untuk panduan lengkap."
+    )
 
 
 # ===================================================================
