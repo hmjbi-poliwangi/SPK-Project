@@ -41,9 +41,9 @@ function loadScores() {
 
             const input = document.createElement('input');
             input.type = 'number';
-            input.step = '0.01';
+            input.step = '0.5';
             input.min = '0';
-            input.max = '9999';
+            input.max = '5';
             input.value = currentScores[c.id] || 0;
             input.style.cssText = 'width:120px;padding:5px;background-color:#1d1d1d;color:white;border:1px solid #555;border-radius:3px;';
             input.dataset.criteriaId = c.id;

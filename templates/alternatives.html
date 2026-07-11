@@ -1,80 +1,101 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <h1 class="page-title">👥 Manajemen Alternatif (Kandidat)</h1>
 
 <div class="toolbar">
-    <button class="btn btn-yellow" onclick="openAltModal()">+ Tambah Alternatif</button>
+  <button class="btn btn-yellow" onclick="openAltModal()">
+    + Tambah Alternatif
+  </button>
 </div>
 
 <table class="data-table" id="alt-table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th style="width:auto">Nama</th>
-            <th style="width:auto">NIM</th>
-            <th>Prodi</th>
-            <th>Kelas</th>
-            <th>Info Tambahan</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody id="alt-table-body"></tbody>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th style="width: auto">Nama</th>
+      <th style="width: auto">NIM</th>
+      <th>Prodi</th>
+      <th>Kelas</th>
+      <th>Info Tambahan</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody id="alt-table-body"></tbody>
 </table>
 
 <!-- Modal Tambah/Edit Alternatif -->
 <div class="modal-overlay" id="alt-modal">
-    <div class="modal-dialog">
-        <h3 id="alt-modal-title">Tambah Alternatif</h3>
-        <input type="hidden" id="alt-edit-id">
-        <div class="form-group">
-            <label for="alt-name">Nama</label>
-            <input type="text" id="alt-name" class="form-input" placeholder="Nama lengkap">
-        </div>
-        <div class="form-group">
-            <label for="alt-nim">NIM</label>
-            <input type="text" id="alt-nim" class="form-input" placeholder="NIM">
-        </div>
-        <div class="form-group">
-            <label for="alt-prodi">Prodi</label>
-            <input type="text" id="alt-prodi" class="form-input" placeholder="Program studi">
-        </div>
-        <div class="form-group">
-            <label for="alt-kelas">Kelas</label>
-            <input type="text" id="alt-kelas" class="form-input" placeholder="Kelas">
-        </div>
-        <div class="form-group">
-            <label for="alt-info">Info Tambahan</label>
-            <input type="text" id="alt-info" class="form-input" placeholder="Info tambahan (opsional)">
-        </div>
-        <div class="modal-actions">
-            <button class="btn btn-gray" onclick="closeModal('alt-modal')">Batal</button>
-            <button class="btn btn-green" onclick="saveAlternative()">Simpan</button>
-        </div>
+  <div class="modal-dialog">
+    <h3 id="alt-modal-title">Tambah Alternatif</h3>
+    <input type="hidden" id="alt-edit-id" />
+    <div class="form-group">
+      <label for="alt-name">Nama</label>
+      <input
+        type="text"
+        id="alt-name"
+        class="form-input"
+        placeholder="Nama lengkap"
+      />
     </div>
+    <div class="form-group">
+      <label for="alt-nim">NIM</label>
+      <input type="text" id="alt-nim" class="form-input" placeholder="NIM" />
+    </div>
+    <div class="form-group">
+      <label for="alt-prodi">Prodi</label>
+      <input
+        type="text"
+        id="alt-prodi"
+        class="form-input"
+        placeholder="Program studi"
+      />
+    </div>
+    <div class="form-group">
+      <label for="alt-kelas">Kelas</label>
+      <input
+        type="text"
+        id="alt-kelas"
+        class="form-input"
+        placeholder="Kelas"
+      />
+    </div>
+    <div class="form-group">
+      <label for="alt-info">Info Tambahan</label>
+      <input
+        type="text"
+        id="alt-info"
+        class="form-input"
+        placeholder="Info tambahan (opsional)"
+      />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeModal('alt-modal')">
+        Batal
+      </button>
+      <button class="btn btn-green" onclick="saveAlternative()">Simpan</button>
+    </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script>
-// ============================================================
-// CRUD Alternatives
-// ============================================================
+  // ============================================================
+  // CRUD Alternatives
+  // ============================================================
 
-function loadAlternatives() {
-    fetch('/api/alternatives')
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById('alt-table-body');
-            tbody.innerHTML = '';
-            data.forEach(a => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
+  function loadAlternatives() {
+    fetch("/api/alternatives")
+      .then((r) => r.json())
+      .then((data) => {
+        const tbody = document.getElementById("alt-table-body");
+        tbody.innerHTML = "";
+        data.forEach((a) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
                     <td>${a.id}</td>
                     <td>${escapeHtml(a.name)}</td>
                     <td>${escapeHtml(a.nim)}</td>
-                    <td>${escapeHtml(a.prodi || '')}</td>
+                    <td>${escapeHtml(a.prodi || "")}</td>
                     <td>${escapeHtml(a.kelas)}</td>
-                    <td>${escapeHtml(a.additional_info || '')}</td>
+                    <td>${escapeHtml(a.additional_info || "")}</td>
                     <td>
                         <div class="btn-group">
                             <a href="/alternatives/${a.id}/scores" class="btn btn-purple btn-sm">Nilai</a>
@@ -83,84 +104,87 @@ function loadAlternatives() {
                         </div>
                     </td>
                 `;
-                tbody.appendChild(tr);
-            });
+          tbody.appendChild(tr);
         });
-}
+      });
+  }
 
-function openAltModal() {
-    document.getElementById('alt-modal-title').textContent = 'Tambah Alternatif';
-    document.getElementById('alt-edit-id').value = '';
-    document.getElementById('alt-name').value = '';
-    document.getElementById('alt-nim').value = '';
-    document.getElementById('alt-prodi').value = '';
-    document.getElementById('alt-kelas').value = '';
-    document.getElementById('alt-info').value = '';
-    openModal('alt-modal');
-}
+  function openAltModal() {
+    document.getElementById("alt-modal-title").textContent =
+      "Tambah Alternatif";
+    document.getElementById("alt-edit-id").value = "";
+    document.getElementById("alt-name").value = "";
+    document.getElementById("alt-nim").value = "";
+    document.getElementById("alt-prodi").value = "";
+    document.getElementById("alt-kelas").value = "";
+    document.getElementById("alt-info").value = "";
+    openModal("alt-modal");
+  }
 
-function editAlternative(id) {
+  function editAlternative(id) {
     fetch(`/api/alternatives/${id}`)
-        .then(r => r.json())
-        .then(a => {
-            document.getElementById('alt-modal-title').textContent = 'Edit Alternatif';
-            document.getElementById('alt-edit-id').value = a.id;
-            document.getElementById('alt-name').value = a.name;
-            document.getElementById('alt-nim').value = a.nim;
-            document.getElementById('alt-prodi').value = a.prodi || '';
-            document.getElementById('alt-kelas').value = a.kelas;
-            document.getElementById('alt-info').value = a.additional_info || '';
-            openModal('alt-modal');
-        });
-}
+      .then((r) => r.json())
+      .then((a) => {
+        document.getElementById("alt-modal-title").textContent =
+          "Edit Alternatif";
+        document.getElementById("alt-edit-id").value = a.id;
+        document.getElementById("alt-name").value = a.name;
+        document.getElementById("alt-nim").value = a.nim;
+        document.getElementById("alt-prodi").value = a.prodi || "";
+        document.getElementById("alt-kelas").value = a.kelas;
+        document.getElementById("alt-info").value = a.additional_info || "";
+        openModal("alt-modal");
+      });
+  }
 
-function saveAlternative() {
-    const id = document.getElementById('alt-edit-id').value;
-    const name = document.getElementById('alt-name').value.trim();
-    const nim = document.getElementById('alt-nim').value.trim();
-    const prodi = document.getElementById('alt-prodi').value.trim();
-    const kelas = document.getElementById('alt-kelas').value.trim();
-    const additional_info = document.getElementById('alt-info').value.trim() || null;
+  function saveAlternative() {
+    const id = document.getElementById("alt-edit-id").value;
+    const name = document.getElementById("alt-name").value.trim();
+    const nim = document.getElementById("alt-nim").value.trim();
+    const prodi = document.getElementById("alt-prodi").value.trim();
+    const kelas = document.getElementById("alt-kelas").value.trim();
+    const additional_info =
+      document.getElementById("alt-info").value.trim() || "";
 
     if (!name) {
-        showAlert('Nama harus diisi', 'error');
-        return;
+      showAlert("Nama harus diisi", "error");
+      return;
     }
 
-    const url = id ? `/api/alternatives/${id}` : '/api/alternatives';
-    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/alternatives/${id}` : "/api/alternatives";
+    const method = id ? "PUT" : "POST";
 
     fetch(url, {
-        method: method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name, nim, prodi, kelas, additional_info})
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, nim, prodi, kelas, additional_info }),
     })
-    .then(r => r.json())
-    .then(res => {
+      .then((r) => r.json())
+      .then((res) => {
         if (res.error) {
-            showAlert(res.error, 'error');
+          showAlert(res.error, "error");
         } else {
-            closeModal('alt-modal');
-            loadAlternatives();
-            showAlert(res.message, 'success');
+          closeModal("alt-modal");
+          loadAlternatives();
+          showAlert(res.message, "success");
         }
-    });
-}
+      });
+  }
 
-function deleteAlternative(id) {
-    if (!confirm('Hapus alternatif ini beserta semua nilainya?')) return;
-    fetch(`/api/alternatives/${id}`, {method: 'DELETE'})
-        .then(r => r.json())
-        .then(res => {
-            if (res.error) {
-                showAlert(res.error, 'error');
-            } else {
-                loadAlternatives();
-                showAlert(res.message, 'success');
-            }
-        });
-}
+  function deleteAlternative(id) {
+    if (!confirm("Hapus alternatif ini beserta semua nilainya?")) return;
+    fetch(`/api/alternatives/${id}`, { method: "DELETE" })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.error) {
+          showAlert(res.error, "error");
+        } else {
+          loadAlternatives();
+          showAlert(res.message, "success");
+        }
+      });
+  }
 
-loadAlternatives();
+  loadAlternatives();
 </script>
 {% endblock %}

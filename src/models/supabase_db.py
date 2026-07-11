@@ -317,7 +317,7 @@ def update_alternative(
     nim: str = None,
     prodi: str = None,
     kelas: str = None,
-    additional_info: str = None,
+    additional_info: str = '',
 ) -> bool:
     supabase = get_supabase()
     data = {}

@@ -1,62 +1,72 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <h1 class="page-title">📋 Manajemen Kriteria</h1>
 
 <div class="toolbar">
-    <button class="btn btn-yellow" onclick="openCriteriaModal()">+ Tambah Kriteria</button>
+  <button class="btn btn-yellow" onclick="openCriteriaModal()">
+    + Tambah Kriteria
+  </button>
 </div>
 
 <table class="data-table" id="criteria-table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th style="width:auto">Nama</th>
-            <th style="width:auto">Deskripsi</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody id="criteria-table-body"></tbody>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th style="width: auto">Nama</th>
+      <th style="width: auto">Deskripsi</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody id="criteria-table-body"></tbody>
 </table>
 
 <!-- Modal Tambah/Edit Kriteria -->
 <div class="modal-overlay" id="criteria-modal">
-    <div class="modal-dialog">
-        <h3 id="criteria-modal-title">Tambah Kriteria</h3>
-        <input type="hidden" id="criteria-edit-id">
-        <div class="form-group">
-            <label for="criteria-name">Nama Kriteria</label>
-            <input type="text" id="criteria-name" class="form-input" placeholder="Masukkan nama kriteria">
-        </div>
-        <div class="form-group">
-            <label for="criteria-desc">Deskripsi</label>
-            <textarea id="criteria-desc" class="form-textarea" placeholder="Deskripsi (opsional)"></textarea>
-        </div>
-        <div class="modal-actions">
-            <button class="btn btn-gray" onclick="closeModal('criteria-modal')">Batal</button>
-            <button class="btn btn-green" onclick="saveCriteria()">Simpan</button>
-        </div>
+  <div class="modal-dialog">
+    <h3 id="criteria-modal-title">Tambah Kriteria</h3>
+    <input type="hidden" id="criteria-edit-id" />
+    <div class="form-group">
+      <label for="criteria-name">Nama Kriteria</label>
+      <input
+        type="text"
+        id="criteria-name"
+        class="form-input"
+        placeholder="Masukkan nama kriteria"
+      />
     </div>
+    <div class="form-group">
+      <label for="criteria-desc">Deskripsi</label>
+      <textarea
+        id="criteria-desc"
+        class="form-textarea"
+        placeholder="Deskripsi (opsional)"
+      ></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeModal('criteria-modal')">
+        Batal
+      </button>
+      <button class="btn btn-green" onclick="saveCriteria()">Simpan</button>
+    </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script>
-// ============================================================
-// CRUD Criteria
-// ============================================================
+  // ============================================================
+  // CRUD Criteria
+  // ============================================================
 
-function loadCriteria() {
-    fetch('/api/criteria')
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById('criteria-table-body');
-            tbody.innerHTML = '';
-            data.forEach(c => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
+  function loadCriteria() {
+    fetch("/api/criteria")
+      .then((r) => r.json())
+      .then((data) => {
+        const tbody = document.getElementById("criteria-table-body");
+        tbody.innerHTML = "";
+        data.forEach((c) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
                     <td>${c.id}</td>
                     <td>${escapeHtml(c.name)}</td>
-                    <td>${escapeHtml(c.description || '')}</td>
+                    <td>${escapeHtml(c.description || "")}</td>
                     <td>
                         <div class="btn-group">
                             <button class="btn btn-blue btn-sm" onclick="editCriteria(${c.id})">Edit</button>
@@ -64,78 +74,81 @@ function loadCriteria() {
                         </div>
                     </td>
                 `;
-                tbody.appendChild(tr);
-            });
+          tbody.appendChild(tr);
         });
-}
+      });
+  }
 
-function openCriteriaModal() {
-    document.getElementById('criteria-modal-title').textContent = 'Tambah Kriteria';
-    document.getElementById('criteria-edit-id').value = '';
-    document.getElementById('criteria-name').value = '';
-    document.getElementById('criteria-desc').value = '';
-    openModal('criteria-modal');
-}
+  function openCriteriaModal() {
+    document.getElementById("criteria-modal-title").textContent =
+      "Tambah Kriteria";
+    document.getElementById("criteria-edit-id").value = "";
+    document.getElementById("criteria-name").value = "";
+    document.getElementById("criteria-desc").value = "";
+    openModal("criteria-modal");
+  }
 
-function editCriteria(id) {
+  function editCriteria(id) {
     fetch(`/api/criteria/${id}`)
-        .then(r => r.json())
-        .then(c => {
-            document.getElementById('criteria-modal-title').textContent = 'Edit Kriteria';
-            document.getElementById('criteria-edit-id').value = c.id;
-            document.getElementById('criteria-name').value = c.name;
-            document.getElementById('criteria-desc').value = c.description || '';
-            openModal('criteria-modal');
-        });
-}
+      .then((r) => r.json())
+      .then((c) => {
+        document.getElementById("criteria-modal-title").textContent =
+          "Edit Kriteria";
+        document.getElementById("criteria-edit-id").value = c.id;
+        document.getElementById("criteria-name").value = c.name;
+        document.getElementById("criteria-desc").value = c.description || "";
+        openModal("criteria-modal");
+      });
+  }
 
-function saveCriteria() {
-    const id = document.getElementById('criteria-edit-id').value;
-    const name = document.getElementById('criteria-name').value.trim();
-    const description = document.getElementById('criteria-desc').value.trim();
+  function saveCriteria() {
+    const id = document.getElementById("criteria-edit-id").value;
+    const name = document.getElementById("criteria-name").value.trim();
+    const description = document.getElementById("criteria-desc").value.trim();
 
     if (!name) {
-        showAlert('Nama kriteria harus diisi', 'error');
-        return;
+      showAlert("Nama kriteria harus diisi", "error");
+      return;
     }
 
-    const url = id ? `/api/criteria/${id}` : '/api/criteria';
-    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/criteria/${id}` : "/api/criteria";
+    const method = id ? "PUT" : "POST";
 
     fetch(url, {
-        method: method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name, description: description || ''})
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, description: description || "" }),
     })
-    .then(r => r.json())
-    .then(res => {
+      .then((r) => r.json())
+      .then((res) => {
         if (res.error) {
-            showAlert(res.error, 'error');
+          showAlert(res.error, "error");
         } else {
-            closeModal('criteria-modal');
-            loadCriteria();
-            showAlert(res.message, 'success');
+          closeModal("criteria-modal");
+          loadCriteria();
+          showAlert(res.message, "success");
         }
-    })
-    .catch(err => {
-        showAlert('Terjadi kesalahan: ' + err.message, 'error');
-    });
-}
+      })
+      .catch((err) => {
+        showAlert("Terjadi kesalahan: " + err.message, "error");
+      });
+  }
 
-function deleteCriteria(id) {
-    if (!confirm('Hapus kriteria ini? Semua data terkait juga akan terhapus.')) return;
-    fetch(`/api/criteria/${id}`, {method: 'DELETE'})
-        .then(r => r.json())
-        .then(res => {
-            if (res.error) {
-                showAlert(res.error, 'error');
-            } else {
-                loadCriteria();
-                showAlert(res.message, 'success');
-            }
-        });
-}
+  function deleteCriteria(id) {
+    if (!confirm("Hapus kriteria ini? Semua data terkait juga akan terhapus."))
+      return;
+    fetch(`/api/criteria/${id}`, { method: "DELETE" })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.error) {
+          showAlert(res.error, "error");
+        } else {
+          loadCriteria();
+          showAlert(res.message, "success");
+        }
+      });
+  }
 
-loadCriteria();
+  loadCriteria();
 </script>
 {% endblock %}
