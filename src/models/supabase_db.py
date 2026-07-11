@@ -134,7 +134,7 @@ def get_criteria_by_id(criteria_id: int) -> dict:
     return resp.data[0]
 
 
-def create_criteria(name: str, description: str = None) -> int:
+def create_criteria(name: str, description: str = '') -> int:
     supabase = get_supabase()
     data = {"name": name}
     if description is not None:
