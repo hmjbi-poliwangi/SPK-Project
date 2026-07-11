@@ -294,7 +294,7 @@ def get_alternative_by_id(alternative_id: int) -> dict:
 
 
 def create_alternative(
-    name: str, nim: str, prodi: str, kelas: str, additional_info: str = None
+    name: str, nim: str, prodi: str, kelas: str, additional_info: str = ''
 ) -> int:
     supabase = get_supabase()
     data = {
