@@ -4,7 +4,9 @@ import os
 # Tambahkan root project ke path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, render_template, request, jsonify
+import zipfile
+from io import BytesIO
+from flask import Flask, render_template, request, jsonify, send_file
 from src.models.supabase_db import (
     create_tables,
     get_all_criteria, create_criteria, update_criteria, delete_criteria, get_criteria_by_id,
@@ -16,7 +18,7 @@ from src.models.supabase_db import (
 )
 from src.engine.profile_matching_web import rank_alternatives
 from src.utils.io_utils import export_to_json, import_from_json, validate_import_data
-from src.utils.pdf_export import export_rankings_to_pdf, export_all_data_to_pdf
+from src.utils.pdf_export import export_rankings_to_pdf, export_report_without_rankings, export_all_data_to_pdf
 
 app = Flask(__name__)
 
@@ -472,6 +474,62 @@ def api_export_department_pdf(dept_id):
         )
         response.headers['Content-Disposition'] = f'attachment; filename=ranking_{dept["name"]}.pdf'
         return response
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/export/pdf-report', methods=['GET'])
+def api_export_pdf_report():
+    """Export laporan lengkap TANPA perangkingan."""
+    try:
+        data = _collect_all_data()
+        pdf_buf = export_report_without_rankings(
+            criteria=data["criteria"],
+            departments=data["departments"],
+            alternatives=data["alternatives"],
+            department_profiles=data["department_profiles"]
+        )
+        response = app.response_class(
+            response=pdf_buf.read(),
+            status=200,
+            mimetype='application/pdf'
+        )
+        response.headers['Content-Disposition'] = 'attachment; filename=spk_laporan_data.pdf'
+        return response
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/export/rankings-all', methods=['GET'])
+def api_export_rankings_all():
+    """Export semua ranking per departemen ke ZIP berisi PDF masing-masing."""
+    try:
+        departments = get_all_departments()
+        criteria = get_all_criteria()
+        criteria_names = [c["name"] for c in criteria]
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for d in departments:
+                try:
+                    rankings = rank_alternatives(d["id"])
+                    pdf_buf = export_rankings_to_pdf(
+                        department_name=d["name"],
+                        rankings=rankings,
+                        criteria_list=criteria_names
+                    )
+                    safe_name = d["name"].replace(" ", "_").replace("/", "_")
+                    zf.writestr(f"ranking_{safe_name}.pdf", pdf_buf.read())
+                except Exception:
+                    continue
+
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='semua_ranking.zip'
+        )
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

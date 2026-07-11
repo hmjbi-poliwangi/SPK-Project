@@ -3,21 +3,6 @@
 <h1 class="page-title">📦 Import / Export Data</h1>
 
 <div class="ie-container">
-    <!-- EXPORT SECTION -->
-    <div class="ie-card">
-        <h2 class="ie-card-title">📤 Export Data</h2>
-        <p class="ie-card-desc">Download seluruh data aplikasi ke format JSON atau PDF.</p>
-        <div class="ie-actions">
-            <button class="btn btn-blue" onclick="exportJSON()">
-                ⬇ Export JSON
-            </button>
-            <button class="btn btn-purple" onclick="exportPDF()">
-                ⬇ Export PDF (Laporan Lengkap)
-            </button>
-        </div>
-        <div id="export-status" class="ie-status"></div>
-    </div>
-
     <!-- IMPORT SECTION -->
     <div class="ie-card">
         <h2 class="ie-card-title">📥 Import Data (JSON)</h2>
@@ -34,6 +19,42 @@
         </button>
         <div id="import-status" class="ie-status"></div>
     </div>
+
+    <!-- EXPORT SECTION -->
+    <div class="ie-card">
+        <h2 class="ie-card-title">📤 Export Data</h2>
+        <p class="ie-card-desc">Download data aplikasi dalam berbagai format.</p>
+
+        <div class="ie-export-group">
+            <h3 class="ie-subtitle">📄 Export JSON</h3>
+            <p class="ie-desc">Seluruh data dalam satu file JSON.</p>
+            <button class="btn btn-blue" onclick="exportJSON()">
+                ⬇ Download JSON
+            </button>
+        </div>
+
+        <hr class="ie-divider">
+
+        <div class="ie-export-group">
+            <h3 class="ie-subtitle">📑 Export PDF - Laporan Data</h3>
+            <p class="ie-desc">Laporan lengkap berisi data kriteria, departemen, profil, dan alternatif. <strong>Tanpa perangkingan.</strong></p>
+            <button class="btn btn-purple" onclick="exportPDFReport()">
+                ⬇ Download PDF (Laporan Data)
+            </button>
+        </div>
+
+        <hr class="ie-divider">
+
+        <div class="ie-export-group">
+            <h3 class="ie-subtitle">🏆 Export PDF - Perangkingan</h3>
+            <p class="ie-desc">Download file ZIP berisi PDF perangkingan masing-masing departemen (satu departemen satu PDF).</p>
+            <button class="btn btn-orange" onclick="exportRankingsAll()">
+                ⬇ Download ZIP (Semua Ranking)
+            </button>
+        </div>
+
+        <div id="export-status" class="ie-status"></div>
+    </div>
 </div>
 {% endblock %}
 
@@ -45,7 +66,7 @@
 function exportJSON() {
     const status = document.getElementById('export-status');
     status.innerHTML = '<span class="text-info">⏳ Memproses export JSON...</span>';
-    
+
     fetch('/api/export/json')
         .then(r => {
             if (!r.ok) throw new Error('Gagal export');
@@ -68,13 +89,13 @@ function exportJSON() {
 }
 
 // ============================================================
-// Export PDF
+// Export PDF - Laporan Data (tanpa ranking)
 // ============================================================
-function exportPDF() {
+function exportPDFReport() {
     const status = document.getElementById('export-status');
-    status.innerHTML = '<span class="text-info">⏳ Memproses export PDF...</span>';
-    
-    fetch('/api/export/pdf')
+    status.innerHTML = '<span class="text-info">⏳ Memproses export PDF laporan data...</span>';
+
+    fetch('/api/export/pdf-report')
         .then(r => {
             if (!r.ok) throw new Error('Gagal export');
             return r.blob();
@@ -83,12 +104,40 @@ function exportPDF() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'spk_laporan.pdf';
+            a.download = 'spk_laporan_data.pdf';
             document.body.appendChild(a);
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            status.innerHTML = '<span class="text-success">✅ Export PDF berhasil!</span>';
+            status.innerHTML = '<span class="text-success">✅ Export PDF laporan data berhasil!</span>';
+        })
+        .catch(err => {
+            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+        });
+}
+
+// ============================================================
+// Export ZIP - Semua Ranking per Departemen
+// ============================================================
+function exportRankingsAll() {
+    const status = document.getElementById('export-status');
+    status.innerHTML = '<span class="text-info">⏳ Memproses export semua ranking...</span>';
+
+    fetch('/api/export/rankings-all')
+        .then(r => {
+            if (!r.ok) throw new Error('Gagal export');
+            return r.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'semua_ranking.zip';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            status.innerHTML = '<span class="text-success">✅ Export semua ranking berhasil! (File ZIP)</span>';
         })
         .catch(err => {
             status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
@@ -102,14 +151,13 @@ document.getElementById('import-file').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const preview = document.getElementById('import-preview');
     const btn = document.getElementById('btn-import');
-    
+
     if (!file) {
         preview.innerHTML = '<p class="text-muted">Belum ada file dipilih.</p>';
         btn.disabled = true;
         return;
     }
-    
-    // Preview file
+
     const reader = new FileReader();
     reader.onload = function(ev) {
         const content = ev.target.result;
@@ -127,19 +175,19 @@ function importJSON() {
     const fileInput = document.getElementById('import-file');
     const file = fileInput.files[0];
     const status = document.getElementById('import-status');
-    
+
     if (!file) {
         showAlert('Pilih file JSON terlebih dahulu', 'error');
         return;
     }
-    
+
     status.innerHTML = '<span class="text-info">⏳ Mengimport data...</span>';
-    
+
     const reader = new FileReader();
     reader.onload = function(ev) {
         try {
             const data = JSON.parse(ev.target.result);
-            
+
             fetch('/api/import/json', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -165,7 +213,7 @@ function importJSON() {
             .catch(err => {
                 status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
             });
-            
+
         } catch (e) {
             status.innerHTML = '<span class="text-error">❌ File JSON tidak valid: ' + e.message + '</span>';
         }
