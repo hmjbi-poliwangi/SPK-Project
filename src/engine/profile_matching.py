@@ -26,8 +26,6 @@ def gap_to_score(gap):
         return 1.5
     elif gap == -4:
         return 1
-    elif gap > 4:
-        return 0.5
     else:
         return 0
 
