@@ -11,7 +11,7 @@ from src.models.data_structure import (
     delete_department, get_department_profiles,
     add_department_profile, update_department_profile,
     delete_department_profile, get_all_criteria, get_db_read,
-    clear_department_rankings
+    clear_department_rankings, get_all_aspects
 )
 
 from src.engine.profile_matching import rank_alternatives
@@ -339,6 +339,12 @@ class ProfileFormDialog(QDialog):
         self.weight_input.setSingleStep(0.05)
         form.addRow("Bobot (0-1):", self.weight_input)
 
+        # Aspek
+        self.aspect_combo = QComboBox()
+        self.aspect_combo.setStyleSheet("background-color: #1d1d1d; color: white; padding: 4px; border: 1px solid #555;")
+        self.load_aspects()
+        form.addRow("Aspek:", self.aspect_combo)
+
         # Tipe core/secondary
         self.type_group = QButtonGroup()
         self.radio_core = QRadioButton("Core")
@@ -383,6 +389,12 @@ class ProfileFormDialog(QDialog):
         for crit in criteria_list:
             self.criteria_combo.addItem(crit["name"], crit["id"])
 
+    def load_aspects(self):
+        self.aspect_combo.addItem("(Tidak Ada)", None)
+        aspects = get_all_aspects()
+        for asp in aspects:
+            self.aspect_combo.addItem(f"{asp['name']} (bobot: {asp['weight']})", asp["id"])
+
     def load_profile_data(self):
         with get_db_read() as conn:
             row = conn.execute("SELECT * FROM department_profiles WHERE id = ?", (self.profile_id,)).fetchone()
@@ -397,6 +409,11 @@ class ProfileFormDialog(QDialog):
                 else:
                     self.radio_secondary.setChecked(True)
                 self.active_check.setChecked(bool(row["is_active"]))
+                aid = row["aspect_id"]
+                if aid:
+                    idx = self.aspect_combo.findData(aid)
+                    if idx >= 0:
+                        self.aspect_combo.setCurrentIndex(idx)
 
     def save(self):
         criteria_id = self.criteria_combo.currentData()
@@ -404,17 +421,19 @@ class ProfileFormDialog(QDialog):
         weight = self.weight_input.value()
         type_ = "core" if self.radio_core.isChecked() else "secondary"
         is_active = 1 if self.active_check.isChecked() else 0
+        aspect_id = self.aspect_combo.currentData()
 
         try:
             if self.profile_id is None:
-                add_department_profile(self.department_id, criteria_id, target, weight, type_)
+                add_department_profile(self.department_id, criteria_id, target, weight, type_, aspect_id=aspect_id)
             else:
                 update_department_profile(
                     self.profile_id,
                     target_value=target,
                     weight=weight,
                     type_=type_,
-                    is_active=is_active
+                    is_active=is_active,
+                    aspect_id=aspect_id
                 )
             self.accept()
         except Exception as e:
@@ -433,8 +452,8 @@ class RankingDialog(QDialog):
         layout.addWidget(title)
 
         table = QTableWidget()
-        table.setColumnCount(4)
-        table.setHorizontalHeaderLabels(["Nama Alternatif", "NCF", "NSF", "Total Skor"])
+        table.setColumnCount(2)
+        table.setHorizontalHeaderLabels(["Nama Alternatif", "Total Skor"])
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -451,9 +470,7 @@ class RankingDialog(QDialog):
         table.setRowCount(len(rankings))
         for row, r in enumerate(rankings):
             table.setItem(row, 0, QTableWidgetItem(r['name']))
-            table.setItem(row, 1, QTableWidgetItem(f"{r['ncf']:.3f}"))
-            table.setItem(row, 2, QTableWidgetItem(f"{r['nsf']:.3f}"))
-            table.setItem(row, 3, QTableWidgetItem(f"{r['total']:.3f}"))
+            table.setItem(row, 1, QTableWidgetItem(f"{r['total']:.3f}"))
         layout.addWidget(table)
 
         btn_close = QPushButton("Tutup")

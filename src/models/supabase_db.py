@@ -32,6 +32,22 @@ def get_supabase() -> Client:
 # Inisialisasi tabel (jalankan sekali saat membuat project di Supabase)
 # -------------------------------------------------------------------
 CREATE_TABLES_SQL = """
+-- 1. Nonaktifkan RLS
+ALTER TABLE IF EXISTS aspects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS departments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS criteria DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS department_profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS alternatives DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS alternative_scores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS department_rankings DISABLE ROW LEVEL SECURITY;
+
+-- 2. Buat tabel aspects (baru)
+CREATE TABLE IF NOT EXISTS aspects (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    weight DOUBLE PRECISION NOT NULL DEFAULT 1.0
+);
+
 -- Tabel departments
 CREATE TABLE IF NOT EXISTS departments (
     id SERIAL PRIMARY KEY,
@@ -45,7 +61,7 @@ CREATE TABLE IF NOT EXISTS criteria (
     description TEXT
 );
 
--- Tabel department_profiles
+-- Tabel department_profiles (dengan aspect_id)
 CREATE TABLE IF NOT EXISTS department_profiles (
     id SERIAL PRIMARY KEY,
     department_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
@@ -54,6 +70,7 @@ CREATE TABLE IF NOT EXISTS department_profiles (
     weight DOUBLE PRECISION NOT NULL DEFAULT 0,
     type TEXT NOT NULL CHECK(type IN ('core', 'secondary')),
     is_active INTEGER NOT NULL DEFAULT 1,
+    aspect_id INTEGER REFERENCES aspects(id) ON DELETE SET NULL,
     UNIQUE(department_id, criteria_id)
 );
 
@@ -76,13 +93,11 @@ CREATE TABLE IF NOT EXISTS alternative_scores (
     UNIQUE(alternative_id, criteria_id)
 );
 
--- Tabel department_rankings (cache)
+-- Tabel department_rankings (cache) - hanya total, tanpa ncf/nsf
 CREATE TABLE IF NOT EXISTS department_rankings (
     id SERIAL PRIMARY KEY,
     department_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
     alternative_id INTEGER NOT NULL REFERENCES alternatives(id) ON DELETE CASCADE,
-    ncf DOUBLE PRECISION NOT NULL,
-    nsf DOUBLE PRECISION NOT NULL,
     total DOUBLE PRECISION NOT NULL,
     UNIQUE(department_id, alternative_id)
 );
@@ -115,6 +130,50 @@ def create_tables():
         "Tabel Supabase belum dibuat! Jalankan SQL dari CREATE_TABLES_SQL "
         "via Supabase SQL Editor. Lihat file DEPLOY_GUIDE.md untuk panduan lengkap."
     )
+
+
+# ===================================================================
+# 0. CRUD Aspects
+# ===================================================================
+def get_all_aspects() -> list:
+    supabase = get_supabase()
+    resp = supabase.table("aspects").select("*").order("id").execute()
+    return resp.data if resp.data else []
+
+
+def get_aspect_by_id(aspect_id: int) -> dict:
+    supabase = get_supabase()
+    resp = supabase.table("aspects").select("*").eq("id", aspect_id).execute()
+    if not resp.data:
+        raise ValueError(f"Aspect dengan id {aspect_id} tidak ditemukan.")
+    return resp.data[0]
+
+
+def create_aspect(name: str, weight: float = 1.0) -> int:
+    supabase = get_supabase()
+    data = {"name": name, "weight": float(weight)}
+    resp = supabase.table("aspects").insert(data).execute()
+    if not resp.data:
+        raise ValueError(f"Aspek dengan nama '{name}' sudah ada.")
+    return resp.data[0]["id"]
+
+
+def update_aspect(aspect_id: int, name: str = None, weight: float = None) -> bool:
+    supabase = get_supabase()
+    data = {}
+    if name is not None:
+        data["name"] = name
+    if weight is not None:
+        data["weight"] = float(weight)
+    if data:
+        supabase.table("aspects").update(data).eq("id", aspect_id).execute()
+    return True
+
+
+def delete_aspect(aspect_id: int) -> bool:
+    supabase = get_supabase()
+    supabase.table("aspects").delete().eq("id", aspect_id).execute()
+    return True
 
 
 # ===================================================================
@@ -201,13 +260,13 @@ def delete_department(department_id: int) -> bool:
 
 
 # ===================================================================
-# 3. Department Profiles
+# 3. Department Profiles (dengan aspect_id)
 # ===================================================================
 def get_department_profiles(department_id: int, active_only: bool = False) -> list:
     supabase = get_supabase()
     query = (
         supabase.table("department_profiles")
-        .select("*, criteria!inner(name)")
+        .select("*, criteria!inner(name), aspects!left(name, weight)")
         .eq("department_id", department_id)
     )
     if active_only:
@@ -215,16 +274,19 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
     resp = query.execute()
     if not resp.data:
         return []
-    # Format ulang: tambahkan criteria_name dari relasi
     result = []
     for row in resp.data:
         row["criteria_name"] = row.pop("criteria", {}).get("name", "")
+        aspect_data = row.pop("aspects", {}) or {}
+        row["aspect_name"] = aspect_data.get("name", "")
+        row["aspect_weight"] = aspect_data.get("weight", None)
         result.append(row)
     return result
 
 
 def add_department_profile(
-    department_id: int, criteria_id: int, target_value: float, weight: float, type_: str
+    department_id: int, criteria_id: int, target_value: float, weight: float, type_: str,
+    aspect_id: int = None
 ) -> int:
     if type_ not in ("core", "secondary"):
         raise ValueError("type harus 'core' atau 'secondary'.")
@@ -236,6 +298,8 @@ def add_department_profile(
         "weight": float(weight),
         "type": type_,
     }
+    if aspect_id is not None:
+        data["aspect_id"] = aspect_id
     resp = supabase.table("department_profiles").insert(data).execute()
     if not resp.data:
         raise ValueError("Gagal menambahkan profile.")
@@ -248,6 +312,7 @@ def update_department_profile(
     weight: float = None,
     type_: str = None,
     is_active: int = None,
+    aspect_id: int = None,
 ) -> bool:
     supabase = get_supabase()
     data = {}
@@ -261,6 +326,8 @@ def update_department_profile(
         data["type"] = type_
     if is_active is not None:
         data["is_active"] = int(is_active)
+    if aspect_id is not None:
+        data["aspect_id"] = aspect_id
     if data:
         supabase.table("department_profiles").update(data).eq("id", profile_id).execute()
     return True
@@ -361,7 +428,6 @@ def get_alternative_scores(alternative_id: int) -> dict:
 def set_alternative_score(alternative_id: int, criteria_id: int, value: float) -> int:
     supabase = get_supabase()
     value = float(value)
-    # Cek apakah sudah ada
     existing = (
         supabase.table("alternative_scores")
         .select("id")
@@ -370,13 +436,11 @@ def set_alternative_score(alternative_id: int, criteria_id: int, value: float) -
         .execute()
     )
     if existing.data:
-        # Update
         supabase.table("alternative_scores").update({"value": value}).eq(
             "alternative_id", alternative_id
         ).eq("criteria_id", criteria_id).execute()
         return existing.data[0]["id"]
     else:
-        # Insert
         data = {
             "alternative_id": alternative_id,
             "criteria_id": criteria_id,
@@ -387,7 +451,7 @@ def set_alternative_score(alternative_id: int, criteria_id: int, value: float) -
 
 
 # ===================================================================
-# 6. Department Rankings (Cache)
+# 6. Department Rankings (Cache) - hanya total
 # ===================================================================
 def clear_department_rankings(department_id: int):
     supabase = get_supabase()
@@ -401,15 +465,11 @@ def clear_all_rankings():
 
 def save_department_ranking(department_id: int, rankings: list):
     supabase = get_supabase()
-    # Hapus cache lama dulu
     clear_department_rankings(department_id)
-    # Insert rankings baru
     records = [
         {
             "department_id": department_id,
             "alternative_id": r["alternative_id"],
-            "ncf": r["ncf"],
-            "nsf": r["nsf"],
             "total": r["total"],
         }
         for r in rankings

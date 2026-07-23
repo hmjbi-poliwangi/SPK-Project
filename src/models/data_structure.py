@@ -38,6 +38,44 @@ def get_db_read():
         conn.close()
 
 # -------------------------------------------------------------------
+# 0. CRUD Aspects
+# -------------------------------------------------------------------
+def create_aspect(name: str, weight: float = 1.0) -> int:
+    try:
+        with get_db() as conn:
+            cur = conn.execute("INSERT INTO aspects (name, weight) VALUES (?, ?)", (name, weight))
+            return cur.lastrowid
+    except sqlite3.IntegrityError:
+        raise ValueError(f"Aspek dengan nama '{name}' sudah ada.")
+
+def get_all_aspects() -> list:
+    with get_db_read() as conn:
+        return conn.execute("SELECT * FROM aspects ORDER BY id").fetchall()
+
+def get_aspect_by_id(aspect_id: int) -> dict:
+    with get_db_read() as conn:
+        row = conn.execute("SELECT * FROM aspects WHERE id = ?", (aspect_id,)).fetchone()
+        if row is None:
+            raise ValueError(f"Aspek dengan id {aspect_id} tidak ditemukan.")
+        return row
+
+def update_aspect(aspect_id: int, name: str = None, weight: float = None) -> bool:
+    try:
+        with get_db() as conn:
+            if name is not None:
+                conn.execute("UPDATE aspects SET name = ? WHERE id = ?", (name, aspect_id))
+            if weight is not None:
+                conn.execute("UPDATE aspects SET weight = ? WHERE id = ?", (weight, aspect_id))
+            return True
+    except sqlite3.IntegrityError:
+        raise ValueError(f"Nama aspek '{name}' sudah digunakan.")
+
+def delete_aspect(aspect_id: int) -> bool:
+    with get_db() as conn:
+        conn.execute("DELETE FROM aspects WHERE id = ?", (aspect_id,))
+        return True
+
+# -------------------------------------------------------------------
 # 1. CRUD Departments
 # -------------------------------------------------------------------
 def create_department(name: str) -> int:
@@ -161,10 +199,11 @@ def delete_alternative(alternative_id: int) -> bool:
         return True
 
 # -------------------------------------------------------------------
-# 4. Department Profiles
+# 4. Department Profiles (sekarang dengan aspect_id)
 # -------------------------------------------------------------------
 def add_department_profile(department_id: int, criteria_id: int,
-                           target_value: float, weight: float, type_: str) -> int:
+                           target_value: float, weight: float, type_: str,
+                           aspect_id: int = None) -> int:
     if type_ not in ('core', 'secondary'):
         raise ValueError("type harus 'core' atau 'secondary'.")
     try:
@@ -175,21 +214,21 @@ def add_department_profile(department_id: int, criteria_id: int,
     try:
         with get_db() as conn:
             cur = conn.execute("""
-                INSERT INTO department_profiles (department_id, criteria_id, target_value, weight, type)
-                VALUES (?, ?, ?, ?, ?)
-            """, (department_id, criteria_id, target_value, weight, type_))
+                INSERT INTO department_profiles (department_id, criteria_id, target_value, weight, type, aspect_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (department_id, criteria_id, target_value, weight, type_, aspect_id))
             return cur.lastrowid
     except sqlite3.IntegrityError as e:
         if "UNIQUE constraint failed" in str(e):
             raise ValueError("Profil untuk kriteria tersebut sudah ada di departemen ini.")
         elif "FOREIGN KEY constraint failed" in str(e):
-            raise ValueError("Department atau criteria id tidak valid.")
+            raise ValueError("Department, criteria, atau aspect id tidak valid.")
         else:
             raise
 
 def update_department_profile(profile_id: int, target_value: float = None,
                               weight: float = None, type_: str = None,
-                              is_active: int = None) -> bool:
+                              is_active: int = None, aspect_id: int = None) -> bool:
     if target_value is not None:
         try:
             target_value = float(target_value)
@@ -214,6 +253,8 @@ def update_department_profile(profile_id: int, target_value: float = None,
             conn.execute("UPDATE department_profiles SET type = ? WHERE id = ?", (type_, profile_id))
         if is_active is not None:
             conn.execute("UPDATE department_profiles SET is_active = ? WHERE id = ?", (is_active, profile_id))
+        if aspect_id is not None:
+            conn.execute("UPDATE department_profiles SET aspect_id = ? WHERE id = ?", (aspect_id, profile_id))
         return True
 
 def delete_department_profile(profile_id: int) -> bool:
@@ -225,16 +266,18 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
     with get_db_read() as conn:
         if active_only:
             return conn.execute("""
-                SELECT dp.*, c.name as criteria_name
+                SELECT dp.*, c.name as criteria_name, a.name as aspect_name, a.weight as aspect_weight
                 FROM department_profiles dp
                 JOIN criteria c ON dp.criteria_id = c.id
+                LEFT JOIN aspects a ON dp.aspect_id = a.id
                 WHERE dp.department_id = ? AND dp.is_active = 1
             """, (department_id,)).fetchall()
         else:
             return conn.execute("""
-                SELECT dp.*, c.name as criteria_name
+                SELECT dp.*, c.name as criteria_name, a.name as aspect_name, a.weight as aspect_weight
                 FROM department_profiles dp
                 JOIN criteria c ON dp.criteria_id = c.id
+                LEFT JOIN aspects a ON dp.aspect_id = a.id
                 WHERE dp.department_id = ?
             """, (department_id,)).fetchall()
 
@@ -306,13 +349,13 @@ def clear_all_rankings():
         conn.execute("DELETE FROM department_rankings")
 
 def save_department_ranking(department_id: int, rankings: list):
-    """Simpan hasil peringkat ke cache (list of dict dengan keys: alternative_id, ncf, nsf, total)."""
+    """Simpan hasil peringkat ke cache (list of dict dengan keys: alternative_id, total)."""
     with get_db() as conn:
         for r in rankings:
             conn.execute("""
-                INSERT INTO department_rankings (department_id, alternative_id, ncf, nsf, total)
-                VALUES (?, ?, ?, ?, ?)
-            """, (department_id, r['alternative_id'], r['ncf'], r['nsf'], r['total']))
+                INSERT INTO department_rankings (department_id, alternative_id, total)
+                VALUES (?, ?, ?)
+            """, (department_id, r['alternative_id'], r['total']))
 
 def get_cached_ranking(department_id: int) -> list:
     """Ambil peringkat dari cache (diurutkan total desc)."""
@@ -332,6 +375,12 @@ def get_cached_ranking(department_id: int) -> list:
 def create_tables():
     with get_db() as conn:
         conn.executescript("""
+            CREATE TABLE IF NOT EXISTS aspects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                weight REAL NOT NULL DEFAULT 1.0
+            );
+
             CREATE TABLE IF NOT EXISTS departments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE
@@ -351,8 +400,10 @@ def create_tables():
                 weight REAL NOT NULL DEFAULT 0,
                 type TEXT NOT NULL CHECK(type IN ('core', 'secondary')),
                 is_active INTEGER NOT NULL DEFAULT 1,
+                aspect_id INTEGER,
                 FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
                 FOREIGN KEY (criteria_id) REFERENCES criteria(id) ON DELETE CASCADE,
+                FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE SET NULL,
                 UNIQUE(department_id, criteria_id)
             );
 
@@ -379,8 +430,6 @@ def create_tables():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 department_id INTEGER NOT NULL,
                 alternative_id INTEGER NOT NULL,
-                ncf REAL NOT NULL,
-                nsf REAL NOT NULL,
                 total REAL NOT NULL,
                 FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
                 FOREIGN KEY (alternative_id) REFERENCES alternatives(id) ON DELETE CASCADE,

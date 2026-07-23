@@ -4,8 +4,10 @@ from ..models.supabase_db import (
     get_all_alternatives,
     get_cached_ranking,
     clear_department_rankings,
-    save_department_ranking
+    save_department_ranking,
+    get_all_aspects
 )
+
 
 def gap_to_score(gap):
     if gap == 0:
@@ -26,50 +28,102 @@ def gap_to_score(gap):
         return 1.5
     elif gap == -4:
         return 1
+    elif gap > 4:
+        return 0.5
     else:
         return 0
 
+
 def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
+    """
+    Hitung skor alternatif berdasarkan metode Profile Matching dengan Aspek.
+    
+    Algoritma:
+    1. Ambil semua aspek yang aktif
+    2. Untuk setiap aspek, kumpulkan kriteria core & secondary yang terikat pada aspek tersebut
+    3. Hitung Nilai Aspek (gabungan core & secondary) untuk setiap aspek
+    4. Kalikan setiap Nilai Aspek dengan bobot aspeknya
+    5. Jumlahkan untuk mendapatkan Ranking Final
+    """
     profiles = get_active_profiles(department_id)
     if not profiles:
         return None
 
     scores = get_alternative_scores(alternative_id)
 
-    core_scores = []
-    secondary_scores = []
-    total_weight_core = 0.0
-    total_weight_secondary = 0.0
+    aspects = get_all_aspects()
+    aspect_map = {a['id']: a for a in aspects}
 
+    # Kelompokkan profiles berdasarkan aspect_id
+    profiles_by_aspect = {}
     for profile in profiles:
-        criteria_id = profile['criteria_id']
-        target = profile['target_value']
-        weight = profile['weight']
-        factor_type = profile['type']
+        aid = profile.get('aspect_id')
+        if aid not in profiles_by_aspect:
+            profiles_by_aspect[aid] = []
+        profiles_by_aspect[aid].append(profile)
 
-        if criteria_id not in scores:
-            continue
+    aspect_scores = []
 
-        actual = scores[criteria_id]
-        gap = actual - target
-        score = gap_to_score(gap)
-
-        if factor_type == 'core':
-            core_scores.append(score * weight)
-            total_weight_core += weight
+    for aspect_id, profile_list in profiles_by_aspect.items():
+        # Bobot untuk aspek ini
+        if aspect_id is not None and aspect_id in aspect_map:
+            aspect_weight = aspect_map[aspect_id]['weight']
         else:
-            secondary_scores.append(score * weight)
-            total_weight_secondary += weight
+            aspect_weight = 1.0
 
-    ncf = sum(core_scores) / total_weight_core if total_weight_core > 0 else 0
-    nsf = sum(secondary_scores) / total_weight_secondary if total_weight_secondary > 0 else 0
-    total = (core_weight * ncf) + ((1 - core_weight) * nsf)
+        core_scores = []
+        secondary_scores = []
+        total_weight_core = 0.0
+        total_weight_secondary = 0.0
+
+        for profile in profile_list:
+            criteria_id = profile['criteria_id']
+            target = profile['target_value']
+            weight = profile['weight']
+            factor_type = profile['type']
+
+            if criteria_id not in scores:
+                continue
+
+            actual = scores[criteria_id]
+            gap = actual - target
+            score = gap_to_score(gap)
+
+            if factor_type == 'core':
+                core_scores.append(score * weight)
+                total_weight_core += weight
+            else:
+                secondary_scores.append(score * weight)
+                total_weight_secondary += weight
+
+        # Hitung NCF dan NSF untuk aspek ini
+        ncf = sum(core_scores) / total_weight_core if total_weight_core > 0 else 0
+        nsf = sum(secondary_scores) / total_weight_secondary if total_weight_secondary > 0 else 0
+
+        # Nilai aspek = gabungan core & secondary
+        nilai_aspek = (core_weight * ncf) + ((1 - core_weight) * nsf)
+
+        aspect_scores.append({
+            'aspect_id': aspect_id,
+            'aspect_weight': aspect_weight,
+            'nilai_aspek': nilai_aspek,
+            'ncf': ncf,
+            'nsf': nsf
+        })
+
+    if not aspect_scores:
+        return None
+
+    # Ranking final: total tertimbang dari semua nilai aspek
+    total_tertimbang = sum(a['nilai_aspek'] * a['aspect_weight'] for a in aspect_scores)
+    total_bobot = sum(a['aspect_weight'] for a in aspect_scores)
+    total = total_tertimbang / total_bobot if total_bobot > 0 else 0
 
     return {
-        'ncf': ncf,
-        'nsf': nsf,
-        'total': total
+        'total': total,
+        'aspect_scores': aspect_scores
     }
+
 
 def rank_alternatives(department_id, core_weight=0.6):
     """Ambil peringkat dari cache jika tersedia, jika tidak hitung & cache."""
@@ -78,8 +132,6 @@ def rank_alternatives(department_id, core_weight=0.6):
         return [{
             'id': r['alternative_id'],
             'name': r['alternative_name'],
-            'ncf': r['ncf'],
-            'nsf': r['nsf'],
             'total': r['total']
         } for r in cached]
 
@@ -92,9 +144,8 @@ def rank_alternatives(department_id, core_weight=0.6):
             results.append({
                 'alternative_id': alt['id'],
                 'name': alt['name'],
-                'ncf': res['ncf'],
-                'nsf': res['nsf'],
-                'total': res['total']
+                'total': res['total'],
+                'aspect_scores': res['aspect_scores']
             })
     results.sort(key=lambda x: x['total'], reverse=True)
 
@@ -106,7 +157,5 @@ def rank_alternatives(department_id, core_weight=0.6):
     return [{
         'id': r['alternative_id'],
         'name': r['name'],
-        'ncf': r['ncf'],
-        'nsf': r['nsf'],
         'total': r['total']
     } for r in results]
