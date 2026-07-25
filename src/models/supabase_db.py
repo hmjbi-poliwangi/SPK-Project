@@ -266,7 +266,7 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
     supabase = get_supabase()
     query = (
         supabase.table("department_profiles")
-        .select("*, criteria!inner(name), aspect_id")
+        .select("*")
         .eq("department_id", department_id)
     )
     if active_only:
@@ -276,7 +276,13 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
         return []
     result = []
     for row in resp.data:
-        row["criteria_name"] = row.pop("criteria", {}).get("name", "")
+        # Ambil nama criteria dari tabel terpisah
+        try:
+            crit = supabase.table("criteria").select("name").eq("id", row["criteria_id"]).execute()
+            row["criteria_name"] = crit.data[0]["name"] if crit.data else ""
+        except Exception:
+            row["criteria_name"] = ""
+        row["aspect_id"] = None
         row["aspect_name"] = ""
         row["aspect_weight"] = None
         result.append(row)

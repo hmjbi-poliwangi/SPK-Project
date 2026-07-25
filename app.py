@@ -131,12 +131,9 @@ def api_delete_criteria(criteria_id):
 def api_get_departments():
     try:
         departments = get_all_departments()
-        result = []
         for dept in departments:
-            profiles = get_department_profiles(dept['id'], active_only=False)
-            dept['active_profiles'] = sum(1 for p in profiles if p['is_active'])
-            result.append(dept)
-        return jsonify(result)
+            dept['active_profiles'] = 0
+        return jsonify(departments)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
