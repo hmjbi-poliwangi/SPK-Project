@@ -266,7 +266,7 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
     supabase = get_supabase()
     query = (
         supabase.table("department_profiles")
-        .select("*, criteria!inner(name), aspects!left(name, weight)")
+        .select("*, criteria!inner(name), aspect_id")
         .eq("department_id", department_id)
     )
     if active_only:
@@ -277,9 +277,8 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
     result = []
     for row in resp.data:
         row["criteria_name"] = row.pop("criteria", {}).get("name", "")
-        aspect_data = row.pop("aspects", {}) or {}
-        row["aspect_name"] = aspect_data.get("name", "")
-        row["aspect_weight"] = aspect_data.get("weight", None)
+        row["aspect_name"] = ""
+        row["aspect_weight"] = None
         result.append(row)
     return result
 
