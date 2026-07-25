@@ -9,6 +9,7 @@ from io import BytesIO
 from flask import Flask, render_template, request, jsonify, send_file
 from src.models.supabase_db import (
     create_tables,
+    get_all_aspects, create_aspect, update_aspect, delete_aspect, get_aspect_by_id,
     get_all_criteria, create_criteria, update_criteria, delete_criteria, get_criteria_by_id,
     get_all_departments, create_department, update_department, delete_department, get_department_by_id,
     get_department_profiles, add_department_profile, update_department_profile, delete_department_profile,
@@ -186,6 +187,66 @@ def api_delete_department(dept_id):
         return jsonify({'error': str(e)}), 500
 
 # ============================================================
+# API: Aspects
+# ============================================================
+
+@app.route('/api/aspects', methods=['GET'])
+def api_get_aspects():
+    try:
+        aspects = get_all_aspects()
+        return jsonify(aspects)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/aspects/<int:aspect_id>', methods=['GET'])
+def api_get_aspect(aspect_id):
+    try:
+        asp = get_aspect_by_id(aspect_id)
+        return jsonify(asp)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/aspects', methods=['POST'])
+def api_create_aspect():
+    try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        weight = float(data.get('weight', 1.0))
+        if not name:
+            return jsonify({'error': 'Nama aspek harus diisi'}), 400
+        asp_id = create_aspect(name, weight)
+        return jsonify({'id': asp_id, 'message': 'Aspek berhasil ditambahkan'}), 201
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/aspects/<int:aspect_id>', methods=['PUT'])
+def api_update_aspect(aspect_id):
+    try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        weight = float(data.get('weight', 1.0))
+        if not name:
+            return jsonify({'error': 'Nama aspek harus diisi'}), 400
+        update_aspect(aspect_id, name, weight)
+        return jsonify({'message': 'Aspek berhasil diupdate'})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/aspects/<int:aspect_id>', methods=['DELETE'])
+def api_delete_aspect(aspect_id):
+    try:
+        delete_aspect(aspect_id)
+        return jsonify({'message': 'Aspek berhasil dihapus'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================
 # API: Department Profiles
 # ============================================================
 
@@ -205,11 +266,12 @@ def api_add_profile(dept_id):
         target_value = data.get('target_value')
         weight = data.get('weight')
         type_ = data.get('type', 'secondary')
+        aspect_id = data.get('aspect_id')
 
         if not all([criteria_id, target_value is not None, weight is not None]):
             return jsonify({'error': 'Semua field harus diisi'}), 400
 
-        profile_id = add_department_profile(dept_id, int(criteria_id), float(target_value), float(weight), type_)
+        profile_id = add_department_profile(dept_id, int(criteria_id), float(target_value), float(weight), type_, aspect_id=aspect_id)
         clear_department_rankings(dept_id)
         return jsonify({'id': profile_id, 'message': 'Profil berhasil ditambahkan'}), 201
     except ValueError as e:
@@ -226,7 +288,8 @@ def api_update_profile(profile_id):
             target_value=float(data['target_value']) if data.get('target_value') is not None else None,
             weight=float(data['weight']) if data.get('weight') is not None else None,
             type_=data.get('type'),
-            is_active=data.get('is_active')
+            is_active=data.get('is_active'),
+            aspect_id=data.get('aspect_id')
         )
         return jsonify({'message': 'Profil berhasil diupdate'})
     except ValueError as e:

@@ -62,6 +62,10 @@
             <input type="number" id="profile-weight" class="form-input" step="0.001" min="0" max="1" value="0.5">
         </div>
         <div class="form-group">
+            <label for="profile-aspect">Aspek</label>
+            <select id="profile-aspect" class="form-select"></select>
+        </div>
+        <div class="form-group">
             <label>Tipe Faktor</label>
             <div class="radio-group">
                 <label><input type="radio" name="profile-type" value="core" checked> Core</label>
@@ -86,13 +90,11 @@
             <thead>
                 <tr>
                     <th style="width:auto">Nama Alternatif</th>
-                    <th>NCF</th>
-                    <th>NSF</th>
                     <th>Total Skor</th>
                 </tr>
             </thead>
             <tbody id="ranking-table-body">
-                <tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>
+                <tr><td colspan="2" style="text-align:center;">Memuat...</td></tr>
             </tbody>
         </table>
         <div class="modal-actions">
@@ -155,11 +157,27 @@ function loadCriteriaSelect() {
         });
 }
 
+function loadAspectsSelect() {
+    fetch('/api/aspects')
+        .then(r => r.json())
+        .then(data => {
+            const sel = document.getElementById('profile-aspect');
+            sel.innerHTML = '<option value="">(Tidak Ada)</option>';
+            data.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.name + ' (bobot: ' + a.weight + ')';
+                sel.appendChild(opt);
+            });
+        });
+}
+
 function openProfileModal() {
     document.getElementById('profile-modal-title').textContent = 'Tambah Profil';
     document.getElementById('profile-edit-id').value = '';
     document.getElementById('profile-target').value = 0;
     document.getElementById('profile-weight').value = 0.5;
+    document.getElementById('profile-aspect').value = '';
     document.querySelector('input[name="profile-type"][value="core"]').checked = true;
     document.getElementById('profile-active-group').style.display = 'none';
     openModal('profile-modal');
@@ -187,6 +205,18 @@ function editProfile(id) {
             document.querySelector(`input[name="profile-type"][value="${p.type}"]`).checked = true;
             document.getElementById('profile-active').checked = !!p.is_active;
             document.getElementById('profile-active-group').style.display = 'block';
+            // Set aspect
+            const aspSel = document.getElementById('profile-aspect');
+            if (p.aspect_id) {
+                for (let i = 0; i < aspSel.options.length; i++) {
+                    if (parseInt(aspSel.options[i].value) === p.aspect_id) {
+                        aspSel.selectedIndex = i;
+                        break;
+                    }
+                }
+            } else {
+                aspSel.selectedIndex = 0;
+            }
             openModal('profile-modal');
         });
 }
@@ -198,6 +228,7 @@ function saveProfile() {
     const weight = parseFloat(document.getElementById('profile-weight').value);
     const type_ = document.querySelector('input[name="profile-type"]:checked').value;
     const is_active = document.getElementById('profile-active').checked ? 1 : 0;
+    const aspect_id = document.getElementById('profile-aspect').value || null;
 
     if (!criteria_id) {
         showAlert('Pilih kriteria terlebih dahulu', 'error');
@@ -209,7 +240,7 @@ function saveProfile() {
         fetch(`/api/profiles/${id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({target_value, weight, type: type_, is_active})
+            body: JSON.stringify({target_value, weight, type: type_, is_active, aspect_id})
         })
         .then(r => r.json())
         .then(res => {
@@ -223,7 +254,7 @@ function saveProfile() {
         fetch(`/api/departments/${DEPT_ID}/profiles`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({criteria_id: parseInt(criteria_id), target_value, weight, type: type_})
+            body: JSON.stringify({criteria_id: parseInt(criteria_id), target_value, weight, type: type_, aspect_id})
         })
         .then(r => r.json())
         .then(res => {
@@ -278,29 +309,27 @@ function saveRename() {
 
 function showRanking() {
     openModal('ranking-modal');
-    document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>';
+    document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="2" style="text-align:center;">Memuat...</td></tr>';
     fetch(`/api/departments/${DEPT_ID}/ranking`)
         .then(r => r.json())
         .then(data => {
             const tbody = document.getElementById('ranking-table-body');
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#95a5a6;">Belum ada data peringkat.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#95a5a6;">Belum ada data peringkat.</td></tr>';
                 return;
             }
             data.forEach(r => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight:bold;color:#ecec13;">${escapeHtml(r.name)}</td>
-                    <td>${r.ncf.toFixed(3)}</td>
-                    <td>${r.nsf.toFixed(3)}</td>
                     <td>${r.total.toFixed(3)}</td>
                 `;
                 tbody.appendChild(tr);
             });
         })
         .catch(err => {
-            document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#e74c3c;">Gagal memuat peringkat.</td></tr>';
+            document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="2" style="text-align:center;color:#e74c3c;">Gagal memuat peringkat.</td></tr>';
         });
 }
 
@@ -309,6 +338,7 @@ function showRanking() {
 // ============================================================
 
 loadCriteriaSelect();
+loadAspectsSelect();
 loadProfiles();
 </script>
 {% endblock %}

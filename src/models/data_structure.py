@@ -374,6 +374,18 @@ def get_cached_ranking(department_id: int) -> list:
 # -------------------------------------------------------------------
 def create_tables():
     with get_db() as conn:
+        # Migration: add aspect_id column if missing (existing database)
+        try:
+            conn.execute("ALTER TABLE department_profiles ADD COLUMN aspect_id INTEGER REFERENCES aspects(id) ON DELETE SET NULL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+        # Migration: add total column if missing (old department_rankings had ncf/nsf)
+        try:
+            conn.execute("ALTER TABLE department_rankings ADD COLUMN total REAL NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS aspects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
