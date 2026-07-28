@@ -9,6 +9,7 @@ from src.views.home_page import HomePage
 from src.views.criteria_page import CriteriaPage
 from src.views.department_page import DepartmentPage
 from src.views.alternative_page import AlternativePage
+from src.views.aspect_page import AspectPage
 from src.views.import_export_dialog import ImportExportDialog
 
 class MainWindow(QMainWindow):
@@ -90,6 +91,7 @@ class MainWindow(QMainWindow):
         self.btn_kriteria = QPushButton("📋  Kriteria")
         self.btn_departemen = QPushButton("🏢  Departemen")
         self.btn_alternatif = QPushButton("👥  Alternatif")
+        self.btn_aspek = QPushButton("📊  Aspek")
 
         # Tombol Import/Export
         self.btn_import = QPushButton("📥  Import Data")
@@ -104,6 +106,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(self.btn_kriteria)
         sidebar_layout.addWidget(self.btn_departemen)
         sidebar_layout.addWidget(self.btn_alternatif)
+        sidebar_layout.addWidget(self.btn_aspek)
         sidebar_layout.addSpacing(10)
         sidebar_layout.addWidget(self.btn_import)
         sidebar_layout.addWidget(self.btn_export)
@@ -119,11 +122,13 @@ class MainWindow(QMainWindow):
         self.kriteria_page = CriteriaPage()
         self.departemen_page = DepartmentPage()
         self.alternatif_page = AlternativePage()
+        self.aspek_page = AspectPage()
 
         self.stacked_widget.addWidget(self.home_page)        # index 0
         self.stacked_widget.addWidget(self.kriteria_page)    # index 1
         self.stacked_widget.addWidget(self.departemen_page)  # index 2
         self.stacked_widget.addWidget(self.alternatif_page)  # index 3
+        self.stacked_widget.addWidget(self.aspek_page)       # index 4
 
         # Tambahkan sidebar dan konten ke layout utama
         main_layout.addWidget(sidebar)
@@ -134,6 +139,7 @@ class MainWindow(QMainWindow):
         self.btn_kriteria.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
         self.btn_departemen.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
         self.btn_alternatif.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
+        self.btn_aspek.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(4))
         self.btn_import.clicked.connect(self.open_import_dialog)
         self.btn_export.clicked.connect(self.open_export_dialog)
         self.btn_exit.clicked.connect(self.close)
