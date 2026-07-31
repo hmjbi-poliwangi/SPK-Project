@@ -84,8 +84,7 @@ function exportJSON() {
             status.innerHTML = '<span class="text-success">✅ Export JSON berhasil!</span>';
         })
         .catch(err => {
-            console.error(err);
-            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
+            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
         });
 }
 
@@ -113,8 +112,7 @@ function exportPDFReport() {
             status.innerHTML = '<span class="text-success">✅ Export PDF laporan data berhasil!</span>';
         })
         .catch(err => {
-            console.error(err);
-            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
+            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
         });
 }
 
@@ -142,8 +140,7 @@ function exportRankingsAll() {
             status.innerHTML = '<span class="text-success">✅ Export semua ranking berhasil! (File ZIP)</span>';
         })
         .catch(err => {
-            console.error(err);
-            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
+            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
         });
 }
 
@@ -214,12 +211,11 @@ function importJSON() {
                 }
             })
             .catch(err => {
-                console.error(err);
-                status.innerHTML = '<span class="text-error">❌ Import gagal</span>';
+                status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
             });
 
         } catch (e) {
-            status.innerHTML = '<span class="text-error">❌ File JSON tidak valid</span>';
+            status.innerHTML = '<span class="text-error">❌ File JSON tidak valid: ' + e.message + '</span>';
         }
     };
     reader.readAsText(file);

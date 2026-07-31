@@ -106,8 +106,7 @@
                 `;
           tbody.appendChild(tr);
         });
-      })
-      .catch(err => console.error(err));
+      });
   }
 
   function openAltModal() {
@@ -135,8 +134,7 @@
         document.getElementById("alt-kelas").value = a.kelas;
         document.getElementById("alt-info").value = a.additional_info || "";
         openModal("alt-modal");
-      })
-      .catch(err => console.error(err));
+      });
   }
 
   function saveAlternative() {

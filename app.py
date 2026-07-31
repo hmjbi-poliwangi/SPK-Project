@@ -318,41 +318,6 @@ def api_get_ranking(dept_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/api/departments/<int:dept_id>/ranking-detail', methods=['GET'])
-def api_get_ranking_detail(dept_id):
-    """Ranking dengan detail skor tiap aspek (NCF, NSF, nilai aspek)."""
-    try:
-        from src.engine.profile_matching_web import calculate_alternative_score
-        from src.models.supabase_db import get_all_alternatives, get_all_aspects
-
-        aspects = get_all_aspects()
-        aspect_map = {a['id']: a for a in aspects}
-        alts = get_all_alternatives()
-        results = []
-        for alt in alts:
-            res = calculate_alternative_score(alt['id'], dept_id)
-            if res:
-                # Enrich aspect_scores with aspect names
-                enriched = []
-                for as_score in res['aspect_scores']:
-                    aid = as_score['aspect_id']
-                    if aid and aid in aspect_map:
-                        as_score['aspect_name'] = aspect_map[aid]['name']
-                    else:
-                        as_score['aspect_name'] = 'Tanpa Aspek'
-                    enriched.append(as_score)
-                results.append({
-                    'id': alt['id'],
-                    'name': alt['name'],
-                    'total': res['total'],
-                    'aspect_scores': enriched
-                })
-        results.sort(key=lambda x: x['total'], reverse=True)
-        return jsonify(results)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 # ============================================================
 # API: Alternatives
 # ============================================================
