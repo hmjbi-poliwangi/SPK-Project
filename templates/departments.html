@@ -63,7 +63,8 @@ function loadDepartments() {
                 `;
                 tbody.appendChild(tr);
             });
-        });
+        })
+        .catch(err => console.error(err));
 }
 
 function openDeptModal() {

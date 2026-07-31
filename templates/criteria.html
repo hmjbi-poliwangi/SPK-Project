@@ -130,7 +130,7 @@
         }
       })
       .catch((err) => {
-        showAlert("Terjadi kesalahan: " + err.message, "error");
+        console.error(err);
       });
   }
 

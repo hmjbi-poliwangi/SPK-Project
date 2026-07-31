@@ -8,24 +8,11 @@
     </div>
 </div>
 
-<h3 style="color:#f0f0f0;margin-bottom:10px;">Kriteria & Bobot:</h3>
-
-<table class="data-table" id="profile-table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th style="width:auto">Kriteria</th>
-            <th>Target</th>
-            <th>Bobot</th>
-            <th>Tipe</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody id="profile-table-body"></tbody>
-</table>
+<div id="aspects-container">
+    <!-- Aspects & Criteria akan di-render oleh JavaScript -->
+</div>
 
 <div class="toolbar mt-10">
-    <button class="btn btn-green" onclick="openProfileModal()">+ Tambah Kriteria</button>
     <button class="btn btn-purple" onclick="showRanking()">🏆 Peringkat Alternatif</button>
 </div>
 
@@ -47,8 +34,9 @@
 <!-- Modal Profile -->
 <div class="modal-overlay" id="profile-modal">
     <div class="modal-dialog">
-        <h3 id="profile-modal-title">Tambah Profil</h3>
+        <h3 id="profile-modal-title">Tambah Kriteria</h3>
         <input type="hidden" id="profile-edit-id">
+        <input type="hidden" id="profile-aspect-id">
         <div class="form-group">
             <label for="profile-criteria">Kriteria</label>
             <select id="profile-criteria" class="form-select"></select>
@@ -60,10 +48,6 @@
         <div class="form-group">
             <label for="profile-weight">Bobot (0-1)</label>
             <input type="number" id="profile-weight" class="form-input" step="0.001" min="0" max="1" value="0.5">
-        </div>
-        <div class="form-group">
-            <label for="profile-aspect">Aspek</label>
-            <select id="profile-aspect" class="form-select"></select>
         </div>
         <div class="form-group">
             <label>Tipe Faktor</label>
@@ -84,17 +68,20 @@
 
 <!-- Modal Ranking -->
 <div class="modal-overlay" id="ranking-modal">
-    <div class="modal-dialog" style="min-width:500px;">
+    <div class="modal-dialog" style="min-width:600px;max-width:700px;">
         <h3>Hasil Peringkat Alternatif</h3>
-        <table class="data-table ranking-table" id="ranking-table">
+        <table class="data-table" id="ranking-table">
             <thead>
                 <tr>
-                    <th style="width:auto">Nama Alternatif</th>
-                    <th>Total Skor</th>
+                    <th>Peringkat</th>
+                    <th style="width:auto">Nama Calon</th>
+                    <th>Skor Tiap Aspek</th>
+                    <th>NCF/NSF Tiap Aspek</th>
+                    <th>Nilai Akhir</th>
                 </tr>
             </thead>
             <tbody id="ranking-table-body">
-                <tr><td colspan="2" style="text-align:center;">Memuat...</td></tr>
+                <tr><td colspan="5" style="text-align:center;">Memuat...</td></tr>
             </tbody>
         </table>
         <div class="modal-actions">
@@ -109,116 +96,146 @@
 {% block scripts %}
 <script>
 const DEPT_ID = parseInt(document.getElementById('dept-id').value, 10);
+let aspectsMap = {};
+let aspectsList = [];
 
 // ============================================================
-// Profiles
+// Load aspects & profiles, render grouped by aspect
 // ============================================================
 
-function loadProfiles() {
-    fetch(`/api/departments/${DEPT_ID}/profiles`)
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById('profile-table-body');
-            tbody.innerHTML = '';
-            data.forEach(p => {
-                let typeDisplay = p.type === 'core' ? 'Core' : 'Secondary';
-                if (!p.is_active) typeDisplay += ' (nonaktif)';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${p.id}</td>
-                    <td>${escapeHtml(p.criteria_name)}</td>
-                    <td>${p.target_value}</td>
-                    <td>${p.weight.toFixed(3)}</td>
-                    <td>${typeDisplay}</td>
-                    <td>
-                        <div class="btn-group">
-                            <button class="btn btn-orange btn-sm" onclick="editProfile(${p.id})">Edit</button>
-                            <button class="btn btn-red btn-sm" onclick="deleteProfile(${p.id})">Hapus</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+function loadAspectsAndProfiles() {
+    Promise.all([
+        fetch('/api/aspects').then(r => r.json()),
+        fetch(`/api/departments/${DEPT_ID}/profiles`).then(r => r.json()),
+        fetch('/api/criteria').then(r => r.json())
+    ]).then(([aspects, profiles, criteria]) => {
+        aspectsMap = {};
+        aspectsList = aspects;
+        aspects.forEach(a => { aspectsMap[a.id] = a; });
+
+        // Kelompokkan profiles by aspect_id
+        const profilesByAspect = {};
+        profiles.forEach(p => {
+            const aid = p.aspect_id || 'no_aspect';
+            if (!profilesByAspect[aid]) profilesByAspect[aid] = [];
+            profilesByAspect[aid].push(p);
         });
+
+        const container = document.getElementById('aspects-container');
+        container.innerHTML = '';
+
+        // Render UNGROUPED profiles (no aspect) first
+        if (profilesByAspect['no_aspect']) {
+            let html = '<div class="ie-card" style="margin-bottom:15px;"><h3 style="color:#f0f0f0;margin-bottom:10px;">Kriteria Tanpa Aspek</h3>';
+            html += buildProfileTable(profilesByAspect['no_aspect']);
+            html += `<button class="btn btn-green btn-sm mt-10" onclick="openProfileModal(null)">+ Tambah Kriteria</button>`;
+            html += '</div>';
+            container.innerHTML += html;
+        }
+
+        // Render profiles by aspect
+        aspects.forEach(asp => {
+            const aid = asp.id;
+            if (!profilesByAspect[aid]) {
+                // Aspect exists but no criteria yet
+                let html = `<div class="ie-card" style="margin-bottom:15px;">`;
+                html += `<div class="header-info"><h3 style="color:#ecec13;margin:0;">📊 ${escapeHtml(asp.name)}</h3><span style="color:#999;">Bobot: ${asp.weight}</span></div>`;
+                html += `<p style="color:#666;">Belum ada kriteria. Tambah kriteria untuk aspek ini.</p>`;
+                html += `<button class="btn btn-green btn-sm mt-10" onclick="openProfileModal(${aid})">+ Tambah Kriteria ke Aspek</button>`;
+                html += '</div>';
+                container.innerHTML += html;
+                return;
+            }
+            const pList = profilesByAspect[aid];
+            let html = `<div class="ie-card" style="margin-bottom:15px;">`;
+            html += `<div class="header-info"><h3 style="color:#ecec13;margin:0;">📊 ${escapeHtml(asp.name)}</h3><span style="color:#999;">Bobot: ${asp.weight}</span></div>`;
+            html += buildProfileTable(pList);
+            html += `<button class="btn btn-green btn-sm mt-10" onclick="openProfileModal(${aid})">+ Tambah Kriteria</button>`;
+            html += '</div>';
+            container.innerHTML += html;
+        });
+
+        // Save criteria list for modal
+        window.criteriaList = criteria;
+    })
+    .catch(err => console.error(err));
 }
 
-function loadCriteriaSelect() {
-    fetch('/api/criteria')
-        .then(r => r.json())
-        .then(data => {
-            const sel = document.getElementById('profile-criteria');
-            sel.innerHTML = '';
-            data.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.name;
-                sel.appendChild(opt);
-            });
-        });
+function buildProfileTable(profiles) {
+    let table = `<table class="data-table" style="margin-top:8px;">
+        <thead><tr>
+            <th>Kriteria</th><th>Target</th><th>Bobot</th><th>Tipe</th><th>Aksi</th>
+        </tr></thead><tbody>`;
+    profiles.forEach(p => {
+        let typeDisplay = p.type === 'core' ? 'Core' : 'Secondary';
+        if (!p.is_active) typeDisplay += ' (nonaktif)';
+        table += `<tr>
+            <td>${escapeHtml(p.criteria_name)}</td>
+            <td>${p.target_value}</td>
+            <td>${p.weight.toFixed(3)}</td>
+            <td>${typeDisplay}</td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-orange btn-sm" onclick="editProfile(${p.id})">Edit</button>
+                    <button class="btn btn-red btn-sm" onclick="deleteProfile(${p.id})">Hapus</button>
+                </div>
+            </td>
+        </tr>`;
+    });
+    table += '</tbody></table>';
+    return table;
 }
 
-function loadAspectsSelect() {
-    fetch('/api/aspects')
-        .then(r => r.json())
-        .then(data => {
-            const sel = document.getElementById('profile-aspect');
-            sel.innerHTML = '<option value="">(Tidak Ada)</option>';
-            data.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name + ' (bobot: ' + a.weight + ')';
-                sel.appendChild(opt);
-            });
-        });
-}
+// ============================================================
+// Profile CRUD
+// ============================================================
 
-function openProfileModal() {
-    document.getElementById('profile-modal-title').textContent = 'Tambah Profil';
+function openProfileModal(aspectId) {
+    document.getElementById('profile-modal-title').textContent = 'Tambah Kriteria';
     document.getElementById('profile-edit-id').value = '';
+    document.getElementById('profile-aspect-id').value = aspectId || '';
     document.getElementById('profile-target').value = 0;
     document.getElementById('profile-weight').value = 0.5;
-    document.getElementById('profile-aspect').value = '';
     document.querySelector('input[name="profile-type"][value="core"]').checked = true;
     document.getElementById('profile-active-group').style.display = 'none';
+    // Load criteria
+    const sel = document.getElementById('profile-criteria');
+    sel.innerHTML = '';
+    (window.criteriaList || []).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+    });
     openModal('profile-modal');
 }
 
 function editProfile(id) {
-    // Need to fetch profile detail - we'll fetch profiles and find by id
     fetch(`/api/departments/${DEPT_ID}/profiles`)
         .then(r => r.json())
         .then(profiles => {
             const p = profiles.find(x => x.id === id);
             if (!p) return;
-            document.getElementById('profile-modal-title').textContent = 'Edit Profil';
+            document.getElementById('profile-modal-title').textContent = 'Edit Kriteria';
             document.getElementById('profile-edit-id').value = p.id;
-            // Set criteria
+            document.getElementById('profile-aspect-id').value = p.aspect_id || '';
             const sel = document.getElementById('profile-criteria');
-            for (let i = 0; i < sel.options.length; i++) {
-                if (parseInt(sel.options[i].value) === p.criteria_id) {
-                    sel.selectedIndex = i;
-                    break;
-                }
-            }
+            sel.innerHTML = '';
+            (window.criteriaList || []).forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                if (c.id === p.criteria_id) opt.selected = true;
+                sel.appendChild(opt);
+            });
             document.getElementById('profile-target').value = p.target_value;
             document.getElementById('profile-weight').value = p.weight;
             document.querySelector(`input[name="profile-type"][value="${p.type}"]`).checked = true;
             document.getElementById('profile-active').checked = !!p.is_active;
             document.getElementById('profile-active-group').style.display = 'block';
-            // Set aspect
-            const aspSel = document.getElementById('profile-aspect');
-            if (p.aspect_id) {
-                for (let i = 0; i < aspSel.options.length; i++) {
-                    if (parseInt(aspSel.options[i].value) === p.aspect_id) {
-                        aspSel.selectedIndex = i;
-                        break;
-                    }
-                }
-            } else {
-                aspSel.selectedIndex = 0;
-            }
             openModal('profile-modal');
-        });
+        })
+        .catch(err => console.error(err));
 }
 
 function saveProfile() {
@@ -228,53 +245,41 @@ function saveProfile() {
     const weight = parseFloat(document.getElementById('profile-weight').value);
     const type_ = document.querySelector('input[name="profile-type"]:checked').value;
     const is_active = document.getElementById('profile-active').checked ? 1 : 0;
-    const aspect_id = document.getElementById('profile-aspect').value || null;
+    const aspect_id = document.getElementById('profile-aspect-id').value || null;
 
     if (!criteria_id) {
         showAlert('Pilih kriteria terlebih dahulu', 'error');
         return;
     }
 
+    const body = {target_value, weight, type: type_, aspect_id};
     if (id) {
-        // Update profile
-        fetch(`/api/profiles/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({target_value, weight, type: type_, is_active, aspect_id})
-        })
-        .then(r => r.json())
-        .then(res => {
+        body.is_active = is_active;
+        fetch(`/api/profiles/${id}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+        .then(r => r.json()).then(res => {
             if (res.error) { showAlert(res.error, 'error'); return; }
-            closeModal('profile-modal');
-            loadProfiles();
-            showAlert(res.message, 'success');
-        });
+            closeModal('profile-modal'); loadAspectsAndProfiles(); showAlert(res.message, 'success');
+        })
+        .catch(err => console.error(err));
     } else {
-        // Add profile
-        fetch(`/api/departments/${DEPT_ID}/profiles`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({criteria_id: parseInt(criteria_id), target_value, weight, type: type_, aspect_id})
-        })
-        .then(r => r.json())
-        .then(res => {
+        body.criteria_id = parseInt(criteria_id);
+        fetch(`/api/departments/${DEPT_ID}/profiles`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+        .then(r => r.json()).then(res => {
             if (res.error) { showAlert(res.error, 'error'); return; }
-            closeModal('profile-modal');
-            loadProfiles();
-            showAlert(res.message, 'success');
-        });
+            closeModal('profile-modal'); loadAspectsAndProfiles(); showAlert(res.message, 'success');
+        })
+        .catch(err => console.error(err));
     }
 }
 
 function deleteProfile(id) {
-    if (!confirm('Hapus profil ini?')) return;
+    if (!confirm('Hapus kriteria ini?')) return;
     fetch(`/api/profiles/${id}`, {method: 'DELETE'})
-        .then(r => r.json())
-        .then(res => {
+        .then(r => r.json()).then(res => {
             if (res.error) { showAlert(res.error, 'error'); return; }
-            loadProfiles();
-            showAlert(res.message, 'success');
-        });
+            loadAspectsAndProfiles(); showAlert(res.message, 'success');
+        })
+        .catch(err => console.error(err));
 }
 
 // ============================================================
@@ -289,47 +294,57 @@ function renameDepartment() {
 function saveRename() {
     const name = document.getElementById('rename-input').value.trim();
     if (!name) { showAlert('Nama departemen harus diisi', 'error'); return; }
-    fetch(`/api/departments/${DEPT_ID}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name})
-    })
-    .then(r => r.json())
-    .then(res => {
+    fetch(`/api/departments/${DEPT_ID}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})
+    .then(r => r.json()).then(res => {
         if (res.error) { showAlert(res.error, 'error'); return; }
         closeModal('rename-modal');
         document.querySelector('.page-title').textContent = '🏢 ' + name;
         showAlert(res.message, 'success');
-    });
+    })
+    .catch(err => console.error(err));
 }
 
 // ============================================================
-// Ranking
+// Ranking Detail
 // ============================================================
 
 function showRanking() {
     openModal('ranking-modal');
-    document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="2" style="text-align:center;">Memuat...</td></tr>';
-    fetch(`/api/departments/${DEPT_ID}/ranking`)
+    document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat...</td></tr>';
+    fetch(`/api/departments/${DEPT_ID}/ranking-detail`)
         .then(r => r.json())
         .then(data => {
             const tbody = document.getElementById('ranking-table-body');
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#95a5a6;">Belum ada data peringkat.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#95a5a6;">Belum ada data peringkat.</td></tr>';
                 return;
             }
-            data.forEach(r => {
+            data.forEach((r, idx) => {
+                // Build aspect scores string
+                let skorStr = '';
+                let ncfnsfStr = '';
+                if (r.aspect_scores && r.aspect_scores.length > 0) {
+                    r.aspect_scores.forEach(as => {
+                        const aspName = as.aspect_name || 'Tanpa Aspek';
+                        skorStr += `<div>${escapeHtml(aspName)}: ${as.nilai_aspek.toFixed(3)}</div>`;
+                        ncfnsfStr += `<div>${escapeHtml(aspName)}: NCF=${as.ncf.toFixed(3)}, NSF=${as.nsf.toFixed(3)}</div>`;
+                    });
+                }
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-weight:bold;color:#ecec13;">${escapeHtml(r.name)}</td>
-                    <td>${r.total.toFixed(3)}</td>
+                    <td style="text-align:center;font-weight:bold;color:#ecec13;">${idx + 1}</td>
+                    <td style="font-weight:bold;">${escapeHtml(r.name)}</td>
+                    <td>${skorStr || '-'}</td>
+                    <td>${ncfnsfStr || '-'}</td>
+                    <td style="font-weight:bold;color:#2ecc71;">${r.total.toFixed(3)}</td>
                 `;
                 tbody.appendChild(tr);
             });
         })
         .catch(err => {
-            document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="2" style="text-align:center;color:#e74c3c;">Gagal memuat peringkat.</td></tr>';
+            console.error(err);
+            document.getElementById('ranking-table-body').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#95a5a6;">Gagal memuat peringkat.</td></tr>';
         });
 }
 
@@ -337,8 +352,6 @@ function showRanking() {
 // Init
 // ============================================================
 
-loadCriteriaSelect();
-loadAspectsSelect();
-loadProfiles();
+loadAspectsAndProfiles();
 </script>
 {% endblock %}
