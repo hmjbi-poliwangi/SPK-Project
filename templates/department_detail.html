@@ -244,11 +244,12 @@ function saveProfile() {
         })
         .then(r => r.json())
         .then(res => {
-            if (res.error) { showAlert(res.error, 'error'); return; }
+            if (res.error) { showSimpleError(res.error, 'Data sudah ada/duplikat atau terjadi kesalahan'); return; }
             closeModal('profile-modal');
             loadProfiles();
             showAlert(res.message, 'success');
-        });
+        })
+        .catch(err => console.error(err));
     } else {
         // Add profile
         fetch(`/api/departments/${DEPT_ID}/profiles`, {
@@ -258,11 +259,12 @@ function saveProfile() {
         })
         .then(r => r.json())
         .then(res => {
-            if (res.error) { showAlert(res.error, 'error'); return; }
+            if (res.error) { showSimpleError(res.error, 'Data sudah ada/duplikat atau terjadi kesalahan'); return; }
             closeModal('profile-modal');
             loadProfiles();
             showAlert(res.message, 'success');
-        });
+        })
+        .catch(err => console.error(err));
     }
 }
 
@@ -271,10 +273,11 @@ function deleteProfile(id) {
     fetch(`/api/profiles/${id}`, {method: 'DELETE'})
         .then(r => r.json())
         .then(res => {
-            if (res.error) { showAlert(res.error, 'error'); return; }
+            if (res.error) { showSimpleError(res.error, 'Terjadi kesalahan saat menghapus data'); return; }
             loadProfiles();
             showAlert(res.message, 'success');
-        });
+        })
+        .catch(err => console.error(err));
 }
 
 // ============================================================
@@ -296,11 +299,12 @@ function saveRename() {
     })
     .then(r => r.json())
     .then(res => {
-        if (res.error) { showAlert(res.error, 'error'); return; }
+        if (res.error) { showSimpleError(res.error, 'Data sudah ada/duplikat atau terjadi kesalahan'); return; }
         closeModal('rename-modal');
         document.querySelector('.page-title').textContent = '🏢 ' + name;
         showAlert(res.message, 'success');
-    });
+    })
+    .catch(err => console.error(err));
 }
 
 // ============================================================

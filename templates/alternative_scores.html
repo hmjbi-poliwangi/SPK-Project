@@ -75,11 +75,12 @@ function saveAllScores() {
     .then(r => r.json())
     .then(res => {
         if (res.error) {
-            showAlert(res.error, 'error');
+            showSimpleError(res.error, 'Terjadi kesalahan saat menyimpan nilai');
         } else {
             showAlert(res.message, 'success');
         }
-    });
+    })
+    .catch(err => console.error(err));
 }
 
 loadScores();

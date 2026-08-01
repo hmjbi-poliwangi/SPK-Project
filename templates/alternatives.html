@@ -162,13 +162,14 @@
       .then((r) => r.json())
       .then((res) => {
         if (res.error) {
-          showAlert(res.error, "error");
+          showSimpleError(res.error, "Data sudah ada/duplikat atau terjadi kesalahan");
         } else {
           closeModal("alt-modal");
           loadAlternatives();
           showAlert(res.message, "success");
         }
-      });
+      })
+      .catch((err) => console.error(err));
   }
 
   function deleteAlternative(id) {
@@ -177,12 +178,13 @@
       .then((r) => r.json())
       .then((res) => {
         if (res.error) {
-          showAlert(res.error, "error");
+          showSimpleError(res.error, "Terjadi kesalahan saat menghapus data");
         } else {
           loadAlternatives();
           showAlert(res.message, "success");
         }
-      });
+      })
+      .catch((err) => console.error(err));
   }
 
   loadAlternatives();

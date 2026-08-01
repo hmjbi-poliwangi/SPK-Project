@@ -122,7 +122,7 @@
       .then((r) => r.json())
       .then((res) => {
         if (res.error) {
-          showAlert(res.error, "error");
+          showSimpleError(res.error, "Data sudah ada/duplikat atau terjadi kesalahan");
         } else {
           closeModal("criteria-modal");
           loadCriteria();
@@ -130,7 +130,7 @@
         }
       })
       .catch((err) => {
-        showAlert("Terjadi kesalahan: " + err.message, "error");
+        console.error(err);
       });
   }
 
@@ -141,12 +141,13 @@
       .then((r) => r.json())
       .then((res) => {
         if (res.error) {
-          showAlert(res.error, "error");
+          showSimpleError(res.error, "Terjadi kesalahan saat menghapus data");
         } else {
           loadCriteria();
           showAlert(res.message, "success");
         }
-      });
+      })
+      .catch((err) => console.error(err));
   }
 
   loadCriteria();

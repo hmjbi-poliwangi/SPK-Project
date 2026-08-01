@@ -84,7 +84,8 @@ function exportJSON() {
             status.innerHTML = '<span class="text-success">✅ Export JSON berhasil!</span>';
         })
         .catch(err => {
-            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+            console.error(err);
+            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
         });
 }
 
@@ -112,7 +113,8 @@ function exportPDFReport() {
             status.innerHTML = '<span class="text-success">✅ Export PDF laporan data berhasil!</span>';
         })
         .catch(err => {
-            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+            console.error(err);
+            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
         });
 }
 
@@ -140,7 +142,8 @@ function exportRankingsAll() {
             status.innerHTML = '<span class="text-success">✅ Export semua ranking berhasil! (File ZIP)</span>';
         })
         .catch(err => {
-            status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+            console.error(err);
+            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
         });
 }
 
@@ -196,10 +199,8 @@ function importJSON() {
             .then(r => r.json())
             .then(res => {
                 if (res.error) {
-                    status.innerHTML = '<span class="text-error">❌ ' + res.error + '</span>';
-                    if (res.details) {
-                        status.innerHTML += '<br><small>' + res.details.join('<br>') + '</small>';
-                    }
+                    console.error(res.error);
+                    status.innerHTML = '<span class="text-error">❌ Data tidak valid atau sudah ada</span>';
                 } else {
                     status.innerHTML = '<span class="text-success">✅ Import berhasil! ' +
                         'Kriteria: ' + res.detail.criteria + ', ' +
@@ -211,11 +212,13 @@ function importJSON() {
                 }
             })
             .catch(err => {
-                status.innerHTML = '<span class="text-error">❌ Error: ' + err.message + '</span>';
+                console.error(err);
+                status.innerHTML = '<span class="text-error">❌ Import gagal</span>';
             });
 
         } catch (e) {
-            status.innerHTML = '<span class="text-error">❌ File JSON tidak valid: ' + e.message + '</span>';
+            console.error(e);
+            status.innerHTML = '<span class="text-error">❌ File JSON tidak valid</span>';
         }
     };
     reader.readAsText(file);

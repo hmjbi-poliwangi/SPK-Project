@@ -100,13 +100,14 @@ function saveDepartment() {
     .then(r => r.json())
     .then(res => {
         if (res.error) {
-            showAlert(res.error, 'error');
+            showSimpleError(res.error, 'Data sudah ada/duplikat atau terjadi kesalahan');
         } else {
             closeModal('dept-modal');
             loadDepartments();
             showAlert(res.message, 'success');
         }
-    });
+    })
+    .catch(err => console.error(err));
 }
 
 function deleteDepartment(id) {
@@ -115,12 +116,13 @@ function deleteDepartment(id) {
         .then(r => r.json())
         .then(res => {
             if (res.error) {
-                showAlert(res.error, 'error');
+                showSimpleError(res.error, 'Terjadi kesalahan saat menghapus data');
             } else {
                 loadDepartments();
                 showAlert(res.message, 'success');
             }
-        });
+        })
+        .catch(err => console.error(err));
 }
 
 loadDepartments();
