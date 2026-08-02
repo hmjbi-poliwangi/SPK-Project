@@ -11,7 +11,6 @@
         <tr>
             <th>ID</th>
             <th style="width:auto">Nama Departemen</th>
-            <th>Jumlah Profil</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -52,7 +51,6 @@ function loadDepartments() {
                 tr.innerHTML = `
                     <td>${d.id}</td>
                     <td><a href="/departments/${d.id}" style="color:#ecec13;text-decoration:none;">${escapeHtml(d.name)}</a></td>
-                    <td>${d.active_profiles}</td>
                     <td>
                         <div class="btn-group">
                             <a href="/departments/${d.id}" class="btn btn-purple btn-sm">Detail</a>
