@@ -282,9 +282,23 @@ def get_department_profiles(department_id: int, active_only: bool = False) -> li
             row["criteria_name"] = crit.data[0]["name"] if crit.data else ""
         except Exception:
             row["criteria_name"] = ""
-        row["aspect_id"] = None
-        row["aspect_name"] = ""
-        row["aspect_weight"] = None
+        # Ambil data aspek dari tabel terpisah (jika aspect_id ada)
+        aspect_id = row.get("aspect_id")
+        if aspect_id:
+            try:
+                asp = supabase.table("aspects").select("name, weight").eq("id", aspect_id).execute()
+                if asp.data:
+                    row["aspect_name"] = asp.data[0]["name"]
+                    row["aspect_weight"] = asp.data[0]["weight"]
+                else:
+                    row["aspect_name"] = ""
+                    row["aspect_weight"] = None
+            except Exception:
+                row["aspect_name"] = ""
+                row["aspect_weight"] = None
+        else:
+            row["aspect_name"] = ""
+            row["aspect_weight"] = None
         result.append(row)
     return result
 

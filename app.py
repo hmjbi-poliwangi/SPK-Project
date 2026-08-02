@@ -553,8 +553,7 @@ def api_export_pdf_report():
         pdf_buf = export_report_without_rankings(
             criteria=data["criteria"],
             departments=data["departments"],
-            alternatives=data["alternatives"],
-            department_profiles=data["department_profiles"]
+            alternatives=data["alternatives"]
         )
         response = app.response_class(
             response=pdf_buf.read(),

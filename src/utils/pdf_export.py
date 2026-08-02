@@ -130,7 +130,7 @@ def export_report_without_rankings(
 ) -> BytesIO:
     """
     Export laporan lengkap TANPA perangkingan.
-    Berisi: Criteria, Departments, Department Profiles, Alternatives + Scores.
+    Berisi: Criteria, Departments, Alternatives.
     """
     try:
         from reportlab.lib.pagesizes import A4
@@ -199,37 +199,8 @@ def export_report_without_rankings(
     elements.append(t2)
     elements.append(Spacer(1, 5*mm))
 
-    # --- Department Profiles (if available) ---
-    if department_profiles:
-        elements.append(Paragraph("C. Profil Departemen (Kriteria & Bobot)", h2_style))
-        prof_data = [["Departemen", "Kriteria", "Target", "Bobot", "Tipe"]]
-        for p in department_profiles:
-            prof_data.append([
-                p.get("department_name", str(p.get("department_id", "-"))),
-                p.get("criteria_name", str(p.get("criteria_id", "-"))),
-                str(p.get("target_value", "-")),
-                f"{p.get('weight', 0):.3f}",
-                p.get("type", "-")
-            ])
-        t2b = Table(prof_data, colWidths=[100, 120, 80, 70, 80], repeatRows=1)
-        t2b.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor("#1d1d1d")),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cccccc")),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f5f5f5")]),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ]))
-        elements.append(t2b)
-        elements.append(Spacer(1, 5*mm))
-    else:
-        elements.append(Spacer(1, 3*mm))
-
     # --- Alternatives ---
-    elements.append(Paragraph("D. Daftar Alternatif (Kandidat)", h2_style))
+    elements.append(Paragraph("C. Daftar Alternatif (Kandidat)", h2_style))
     alt_data = [["ID", "Nama", "NIM", "Prodi", "Kelas"]]
     for a in alternatives:
         alt_data.append([
