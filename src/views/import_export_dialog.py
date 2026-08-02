@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from src.models.data_structure import (
+    get_all_aspects, create_aspect,
     get_all_criteria, get_all_departments, get_department_profiles,
     get_all_alternatives, get_alternative_scores, get_db, get_db_read,
     create_criteria, create_department, add_department_profile,
@@ -106,6 +107,7 @@ class ImportExportDialog(QDialog):
 
     def _collect_all_data_sqlite(self):
         """Kumpulkan semua data dari SQLite untuk export."""
+        aspects = [dict(a) for a in get_all_aspects()]
         criteria = [dict(c) for c in get_all_criteria()]
         departments = [dict(d) for d in get_all_departments()]
 
@@ -138,6 +140,7 @@ class ImportExportDialog(QDialog):
                 pass
 
         return {
+            "aspects": aspects,
             "criteria": criteria,
             "departments": departments,
             "department_profiles": department_profiles,
@@ -170,7 +173,8 @@ class ImportExportDialog(QDialog):
                     department_profiles=data["department_profiles"],
                     alternatives=data["alternatives"],
                     alternative_scores=data["alternative_scores"],
-                    rankings=data["rankings"]
+                    rankings=data["rankings"],
+                    aspects=data["aspects"]
                 )
                 file_path, _ = QFileDialog.getSaveFileName(
                     self, "Simpan JSON", "spk_export.json",
@@ -298,7 +302,8 @@ class ImportExportDialog(QDialog):
                 return
 
             # Konfirmasi
-            counts = f"Kriteria: {len(data['criteria'])}\n"
+            counts = f"Aspek: {len(data.get('aspects', []))}\n"
+            counts += f"Kriteria: {len(data['criteria'])}\n"
             counts += f"Departemen: {len(data['departments'])}\n"
             counts += f"Profil: {len(data['department_profiles'])}\n"
             counts += f"Alternatif: {len(data['alternatives'])}"
@@ -309,6 +314,15 @@ class ImportExportDialog(QDialog):
             )
             if confirm != QMessageBox.StandardButton.Yes:
                 return
+
+            # 0. Import aspects
+            aspect_map = {}
+            for a in data.get("aspects", []):
+                try:
+                    new_id = create_aspect(a["name"], a.get("weight", 1.0))
+                    aspect_map[a.get("id")] = new_id
+                except Exception:
+                    pass
 
             # 1. Import criteria
             criteria_map = {}
@@ -328,15 +342,17 @@ class ImportExportDialog(QDialog):
                 except Exception:
                     pass
 
-            # 3. Import department_profiles
+            # 3. Import department_profiles (dengan aspect_id)
             for p in data["department_profiles"]:
                 try:
                     dept_id = dept_map.get(p["department_id"])
                     crit_id = criteria_map.get(p["criteria_id"])
+                    aspect_id = aspect_map.get(p.get("aspect_id")) if p.get("aspect_id") else None
                     if dept_id and crit_id:
                         add_department_profile(
                             dept_id, crit_id,
-                            p["target_value"], p["weight"], p["type"]
+                            p["target_value"], p["weight"], p["type"],
+                            aspect_id=aspect_id
                         )
                 except Exception:
                     pass
@@ -366,6 +382,7 @@ class ImportExportDialog(QDialog):
 
             clear_all_rankings()
             QMessageBox.information(self, "Sukses", f"Import berhasil!\n"
+                f"Aspek: {len(aspect_map)}\n"
                 f"Kriteria: {len(criteria_map)}\n"
                 f"Departemen: {len(dept_map)}\n"
                 f"Alternatif: {len(alt_map)}")

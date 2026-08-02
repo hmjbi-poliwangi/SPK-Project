@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 
 
-def export_to_json(criteria, departments, department_profiles, alternatives, alternative_scores, rankings):
+def export_to_json(criteria, departments, department_profiles, alternatives, alternative_scores, rankings, aspects=None):
     """
     Export seluruh data ke format JSON.
     Parameter adalah list of dict dari masing-masing tabel.
@@ -18,6 +18,7 @@ def export_to_json(criteria, departments, department_profiles, alternatives, alt
             "version": "1.0",
             "app": "SPK Profile Matching"
         },
+        "aspects": aspects or [],
         "criteria": criteria,
         "departments": departments,
         "department_profiles": department_profiles,
@@ -51,6 +52,11 @@ def validate_import_data(data: dict) -> list:
     Validasi data import. Mengembalikan list pesan error (kosong jika valid).
     """
     errors = []
+
+    # Validasi aspects (opsional - untuk kompatibilitas file lama)
+    for i, a in enumerate(data.get("aspects", [])):
+        if "name" not in a or not a["name"]:
+            errors.append(f"Aspek ke-{i+1}: nama tidak boleh kosong")
 
     # Validasi criteria
     for i, c in enumerate(data["criteria"]):

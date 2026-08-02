@@ -421,6 +421,7 @@ def api_save_scores(alt_id):
 
 def _collect_all_data():
     """Kumpulkan seluruh data dari Supabase untuk export."""
+    aspects = get_all_aspects()
     criteria = get_all_criteria()
     departments = get_all_departments()
     department_profiles = []
@@ -450,6 +451,7 @@ def _collect_all_data():
             pass
 
     return {
+        "aspects": aspects,
         "criteria": criteria,
         "departments": departments,
         "department_profiles": department_profiles,
@@ -483,7 +485,8 @@ def api_export_json():
             department_profiles=data["department_profiles"],
             alternatives=data["alternatives"],
             alternative_scores=data["alternative_scores"],
-            rankings=data["rankings"]
+            rankings=data["rankings"],
+            aspects=data["aspects"]
         )
         response = app.response_class(
             response=json_str,
@@ -611,6 +614,15 @@ def api_import_json():
         if errors:
             return jsonify({'error': 'Validasi gagal', 'details': errors}), 400
 
+        # 0. Import aspects
+        aspect_map = {}
+        for a in data.get("aspects", []):
+            try:
+                new_id = create_aspect(a["name"], a.get("weight", 1.0))
+                aspect_map[a.get("id")] = new_id
+            except Exception:
+                pass
+
         # 1. Import criteria
         criteria_map = {}
         for c in data.get("criteria", []):
@@ -629,15 +641,17 @@ def api_import_json():
             except Exception:
                 pass
 
-        # 3. Import department_profiles
+        # 3. Import department_profiles (dengan aspect_id)
         for p in data.get("department_profiles", []):
             try:
                 dept_id = dept_map.get(p["department_id"])
                 crit_id = criteria_map.get(p["criteria_id"])
+                aspect_id = aspect_map.get(p.get("aspect_id")) if p.get("aspect_id") else None
                 if dept_id and crit_id:
                     add_department_profile(
                         dept_id, crit_id,
-                        p["target_value"], p["weight"], p["type"]
+                        p["target_value"], p["weight"], p["type"],
+                        aspect_id=aspect_id
                     )
             except Exception:
                 pass
@@ -667,6 +681,7 @@ def api_import_json():
 
         clear_all_rankings()
         return jsonify({'message': 'Import berhasil', 'detail': {
+            'aspects': len(aspect_map),
             'criteria': len(criteria_map),
             'departments': len(dept_map),
             'alternatives': len(alt_map)

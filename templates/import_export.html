@@ -203,6 +203,7 @@ function importJSON() {
                     status.innerHTML = '<span class="text-error">❌ Data tidak valid atau sudah ada</span>';
                 } else {
                     status.innerHTML = '<span class="text-success">✅ Import berhasil! ' +
+                        'Aspek: ' + (res.detail.aspects || 0) + ', ' +
                         'Kriteria: ' + res.detail.criteria + ', ' +
                         'Departemen: ' + res.detail.departments + ', ' +
                         'Alternatif: ' + res.detail.alternatives + '</span>';
