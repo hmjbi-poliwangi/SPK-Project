@@ -473,13 +473,19 @@ def set_alternative_score(alternative_id: int, criteria_id: int, value: float) -
 # 6. Department Rankings (Cache) - hanya total
 # ===================================================================
 def clear_department_rankings(department_id: int):
-    supabase = get_supabase()
-    supabase.table("department_rankings").delete().eq("department_id", department_id).execute()
+    try:
+        supabase = get_supabase()
+        supabase.table("department_rankings").delete().eq("department_id", department_id).execute()
+    except Exception:
+        pass
 
 
 def clear_all_rankings():
-    supabase = get_supabase()
-    supabase.table("department_rankings").delete().neq("id", 0).execute()
+    try:
+        supabase = get_supabase()
+        supabase.table("department_rankings").delete().neq("id", 0).execute()
+    except Exception:
+        pass
 
 
 def save_department_ranking(department_id: int, rankings: list):
@@ -501,7 +507,7 @@ def get_cached_ranking(department_id: int) -> list:
     supabase = get_supabase()
     resp = (
         supabase.table("department_rankings")
-        .select("*, alternatives!inner(name)")
+        .select("*")
         .eq("department_id", department_id)
         .order("total", desc=True)
         .execute()
@@ -510,6 +516,11 @@ def get_cached_ranking(department_id: int) -> list:
         return []
     result = []
     for row in resp.data:
-        row["alternative_name"] = row.pop("alternatives", {}).get("name", "")
+        # Ambil nama alternatif dari tabel terpisah (hindari join yang bermasalah)
+        try:
+            alt = supabase.table("alternatives").select("name").eq("id", row["alternative_id"]).execute()
+            row["alternative_name"] = alt.data[0]["name"] if alt.data else ""
+        except Exception:
+            row["alternative_name"] = ""
         result.append(row)
     return result
