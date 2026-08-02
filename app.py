@@ -98,6 +98,7 @@ def api_create_criteria():
         if not name:
             return jsonify({'error': 'Nama kriteria harus diisi'}), 400
         crit_id = create_criteria(name, description)
+        clear_all_rankings()
         return jsonify({'id': crit_id, 'message': 'Kriteria berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -113,6 +114,7 @@ def api_update_criteria(criteria_id):
         if not name:
             return jsonify({'error': 'Nama kriteria harus diisi'}), 400
         update_criteria(criteria_id, name, description)
+        clear_all_rankings()
         return jsonify({'message': 'Kriteria berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -123,6 +125,7 @@ def api_update_criteria(criteria_id):
 def api_delete_criteria(criteria_id):
     try:
         delete_criteria(criteria_id)
+        clear_all_rankings()
         return jsonify({'message': 'Kriteria berhasil dihapus'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -159,6 +162,7 @@ def api_create_department():
         if not name:
             return jsonify({'error': 'Nama departemen harus diisi'}), 400
         dept_id = create_department(name)
+        clear_all_rankings()
         return jsonify({'id': dept_id, 'message': 'Departemen berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -173,6 +177,7 @@ def api_update_department(dept_id):
         if not name:
             return jsonify({'error': 'Nama departemen harus diisi'}), 400
         update_department(dept_id, name)
+        clear_all_rankings()
         return jsonify({'message': 'Departemen berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -183,6 +188,7 @@ def api_update_department(dept_id):
 def api_delete_department(dept_id):
     try:
         delete_department(dept_id)
+        clear_all_rankings()
         return jsonify({'message': 'Departemen berhasil dihapus'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -218,6 +224,7 @@ def api_create_aspect():
         if not name:
             return jsonify({'error': 'Nama aspek harus diisi'}), 400
         asp_id = create_aspect(name, weight)
+        clear_all_rankings()
         return jsonify({'id': asp_id, 'message': 'Aspek berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -233,6 +240,7 @@ def api_update_aspect(aspect_id):
         if not name:
             return jsonify({'error': 'Nama aspek harus diisi'}), 400
         update_aspect(aspect_id, name, weight)
+        clear_all_rankings()
         return jsonify({'message': 'Aspek berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -243,6 +251,7 @@ def api_update_aspect(aspect_id):
 def api_delete_aspect(aspect_id):
     try:
         delete_aspect(aspect_id)
+        clear_all_rankings()
         return jsonify({'message': 'Aspek berhasil dihapus'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -273,7 +282,7 @@ def api_add_profile(dept_id):
             return jsonify({'error': 'Semua field harus diisi'}), 400
 
         profile_id = add_department_profile(dept_id, int(criteria_id), float(target_value), float(weight), type_, aspect_id=aspect_id)
-        clear_department_rankings(dept_id)
+        clear_all_rankings()
         return jsonify({'id': profile_id, 'message': 'Profil berhasil ditambahkan'}), 201
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -292,6 +301,7 @@ def api_update_profile(profile_id):
             is_active=data.get('is_active'),
             aspect_id=data.get('aspect_id')
         )
+        clear_all_rankings()
         return jsonify({'message': 'Profil berhasil diupdate'})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -302,6 +312,7 @@ def api_update_profile(profile_id):
 def api_delete_profile(profile_id):
     try:
         delete_department_profile(profile_id)
+        clear_all_rankings()
         return jsonify({'message': 'Profil berhasil dihapus'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
