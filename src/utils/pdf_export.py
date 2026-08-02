@@ -391,13 +391,11 @@ def export_all_data_to_pdf(
         for dept_name, rankings in rankings_per_department.items():
             elements.append(Spacer(1, 4*mm))
             elements.append(Paragraph(f"Departemen: {dept_name}", subtitle_style))
-            rank_data = [["Peringkat", "Nama Alternatif", "NCF", "NSF", "Total"]]
+            rank_data = [["Peringkat", "Nama Alternatif", "Total"]]
             for i, r in enumerate(rankings, 1):
                 name = r.get("name") or r.get("alternative_name", "-")
                 rank_data.append([
                     str(i), name,
-                    f"{r.get('ncf', 0):.3f}",
-                    f"{r.get('nsf', 0):.3f}",
                     f"{r.get('total', 0):.3f}"
                 ])
             t4 = Table(rank_data, colWidths=[50, 180, 70, 70, 70], repeatRows=1)
