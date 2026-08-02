@@ -74,17 +74,15 @@ def export_rankings_to_pdf(
     elements.append(Spacer(1, 10*mm))
 
     # Header tabel
-    table_data = [["Rank", "Nama Alternatif", "NCF", "NSF", "Total Skor"]]
+    table_data = [["Rank", "Nama Alternatif", "Total Skor"]]
 
     for i, r in enumerate(rankings, start=1):
         name = r.get("name") or r.get("alternative_name", "-")
-        ncf = f"{r.get('ncf', 0):.3f}"
-        nsf = f"{r.get('nsf', 0):.3f}"
         total = f"{r.get('total', 0):.3f}"
-        table_data.append([str(i), name, ncf, nsf, total])
+        table_data.append([str(i), name, total])
 
     # Style tabel
-    col_widths = [50, 200, 80, 80, 100]
+    col_widths = [50, 200, 100]
     table = Table(table_data, colWidths=col_widths, repeatRows=1)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
