@@ -398,7 +398,7 @@ def export_all_data_to_pdf(
                     str(i), name,
                     f"{r.get('total', 0):.3f}"
                 ])
-            t4 = Table(rank_data, colWidths=[50, 180, 70, 70, 70], repeatRows=1)
+            t4 = Table(rank_data, colWidths=[50, 180, 70], repeatRows=1)
             t4.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#9b59b6")),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
