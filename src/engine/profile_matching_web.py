@@ -45,14 +45,17 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
     4. Kalikan setiap Nilai Aspek dengan bobot aspeknya
     5. Jumlahkan untuk mendapatkan Ranking Final
     """
-    profiles = get_active_profiles(department_id)
-    if not profiles:
+    try:
+        profiles = get_active_profiles(department_id)
+        if not profiles:
+            return None
+
+        scores = get_alternative_scores(alternative_id)
+
+        aspects = get_all_aspects()
+        aspect_map = {a['id']: a for a in aspects}
+    except Exception:
         return None
-
-    scores = get_alternative_scores(alternative_id)
-
-    aspects = get_all_aspects()
-    aspect_map = {a['id']: a for a in aspects}
 
     # Kelompokkan profiles berdasarkan aspect_id
     profiles_by_aspect = {}
@@ -127,35 +130,41 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
 
 def rank_alternatives(department_id, core_weight=0.6):
     """Ambil peringkat dari cache jika tersedia, jika tidak hitung & cache."""
-    cached = get_cached_ranking(department_id)
-    if cached:
+    try:
+        cached = get_cached_ranking(department_id)
+        if cached:
+            return [{
+                'id': r['alternative_id'],
+                'name': r['alternative_name'],
+                'total': r['total']
+            } for r in cached]
+
+        # Hitung ulang
+        alts = get_all_alternatives()
+        results = []
+        for alt in alts:
+            try:
+                res = calculate_alternative_score(alt['id'], department_id, core_weight)
+                if res:
+                    results.append({
+                        'alternative_id': alt['id'],
+                        'name': alt['name'],
+                        'total': res['total'],
+                        'aspect_scores': res['aspect_scores']
+                    })
+            except Exception:
+                continue
+        results.sort(key=lambda x: x['total'], reverse=True)
+
+        # Simpan ke cache (hapus dulu sebelumnya)
+        clear_department_rankings(department_id)
+        save_department_ranking(department_id, results)
+
+        # Kembalikan format yang konsisten
         return [{
             'id': r['alternative_id'],
-            'name': r['alternative_name'],
+            'name': r['name'],
             'total': r['total']
-        } for r in cached]
-
-    # Hitung ulang
-    alts = get_all_alternatives()
-    results = []
-    for alt in alts:
-        res = calculate_alternative_score(alt['id'], department_id, core_weight)
-        if res:
-            results.append({
-                'alternative_id': alt['id'],
-                'name': alt['name'],
-                'total': res['total'],
-                'aspect_scores': res['aspect_scores']
-            })
-    results.sort(key=lambda x: x['total'], reverse=True)
-
-    # Simpan ke cache (hapus dulu sebelumnya)
-    clear_department_rankings(department_id)
-    save_department_ranking(department_id, results)
-
-    # Kembalikan format yang konsisten
-    return [{
-        'id': r['alternative_id'],
-        'name': r['name'],
-        'total': r['total']
-    } for r in results]
+        } for r in results]
+    except Exception:
+        return []

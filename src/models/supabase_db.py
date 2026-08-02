@@ -489,38 +489,44 @@ def clear_all_rankings():
 
 
 def save_department_ranking(department_id: int, rankings: list):
-    supabase = get_supabase()
-    clear_department_rankings(department_id)
-    records = [
-        {
-            "department_id": department_id,
-            "alternative_id": r["alternative_id"],
-            "total": r["total"],
-        }
-        for r in rankings
-    ]
-    if records:
-        supabase.table("department_rankings").insert(records).execute()
+    try:
+        supabase = get_supabase()
+        clear_department_rankings(department_id)
+        records = [
+            {
+                "department_id": department_id,
+                "alternative_id": r["alternative_id"],
+                "total": r["total"],
+            }
+            for r in rankings
+        ]
+        if records:
+            supabase.table("department_rankings").insert(records).execute()
+    except Exception:
+        pass
 
 
 def get_cached_ranking(department_id: int) -> list:
-    supabase = get_supabase()
-    resp = (
-        supabase.table("department_rankings")
-        .select("*")
-        .eq("department_id", department_id)
-        .order("total", desc=True)
-        .execute()
-    )
-    if not resp.data:
+    try:
+        supabase = get_supabase()
+        resp = (
+            supabase.table("department_rankings")
+            .select("*")
+            .eq("department_id", department_id)
+            .order("total", desc=True)
+            .execute()
+        )
+        if not resp.data:
+            return []
+        result = []
+        for row in resp.data:
+            # Ambil nama alternatif dari tabel terpisah (hindari join yang bermasalah)
+            try:
+                alt = supabase.table("alternatives").select("name").eq("id", row["alternative_id"]).execute()
+                row["alternative_name"] = alt.data[0]["name"] if alt.data else ""
+            except Exception:
+                row["alternative_name"] = ""
+            result.append(row)
+        return result
+    except Exception:
         return []
-    result = []
-    for row in resp.data:
-        # Ambil nama alternatif dari tabel terpisah (hindari join yang bermasalah)
-        try:
-            alt = supabase.table("alternatives").select("name").eq("id", row["alternative_id"]).execute()
-            row["alternative_name"] = alt.data[0]["name"] if alt.data else ""
-        except Exception:
-            row["alternative_name"] = ""
-        result.append(row)
-    return result

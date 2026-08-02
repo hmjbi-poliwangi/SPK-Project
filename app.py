@@ -325,9 +325,11 @@ def api_delete_profile(profile_id):
 def api_get_ranking(dept_id):
     try:
         rankings = rank_alternatives(dept_id)
+        if not rankings:
+            return jsonify([])
         return jsonify(rankings)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify([]), 200
 
 # ============================================================
 # API: Alternatives
