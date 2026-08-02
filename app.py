@@ -509,7 +509,8 @@ def api_export_pdf():
             criteria=data["criteria"],
             departments=data["departments"],
             alternatives=data["alternatives"],
-            rankings_per_department=rankings_per_dept
+            rankings_per_department=rankings_per_dept,
+            aspects=data["aspects"]
         )
         response = app.response_class(
             response=pdf_buf.read(),
@@ -553,7 +554,8 @@ def api_export_pdf_report():
         pdf_buf = export_report_without_rankings(
             criteria=data["criteria"],
             departments=data["departments"],
-            alternatives=data["alternatives"]
+            alternatives=data["alternatives"],
+            aspects=data["aspects"]
         )
         response = app.response_class(
             response=pdf_buf.read(),

@@ -126,11 +126,12 @@ def export_report_without_rankings(
     criteria: list,
     departments: list,
     alternatives: list,
-    department_profiles: list = None
+    department_profiles: list = None,
+    aspects: list = None
 ) -> BytesIO:
     """
     Export laporan lengkap TANPA perangkingan.
-    Berisi: Criteria, Departments, Alternatives.
+    Berisi: Aspects, Criteria, Departments, Alternatives.
     """
     try:
         from reportlab.lib.pagesizes import A4
@@ -160,8 +161,29 @@ def export_report_without_rankings(
     elements.append(Paragraph(f"Tanggal: {datetime.now().strftime('%d/%m/%Y %H:%M')}", subtitle_style))
     elements.append(Spacer(1, 8*mm))
 
+    # --- Aspects ---
+    if aspects:
+        elements.append(Paragraph("A. Daftar Aspek", h2_style))
+        asp_data = [["ID", "Nama Aspek", "Bobot"]]
+        for a in aspects:
+            asp_data.append([str(a.get("id", "-")), a.get("name", "-"), str(a.get("weight", "-"))])
+        t_asp = Table(asp_data, colWidths=[40, 300, 100], repeatRows=1)
+        t_asp.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor("#1d1d1d")),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cccccc")),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f5f5f5")]),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        elements.append(t_asp)
+        elements.append(Spacer(1, 5*mm))
+
     # --- Criteria ---
-    elements.append(Paragraph("A. Daftar Kriteria", h2_style))
+    elements.append(Paragraph("B. Daftar Kriteria", h2_style))
     crit_data = [["ID", "Nama Kriteria", "Deskripsi"]]
     for c in criteria:
         crit_data.append([str(c.get("id", "-")), c.get("name", "-"), c.get("description", "-") or "-"])
@@ -181,7 +203,7 @@ def export_report_without_rankings(
     elements.append(Spacer(1, 5*mm))
 
     # --- Departments ---
-    elements.append(Paragraph("B. Daftar Departemen", h2_style))
+    elements.append(Paragraph("C. Daftar Departemen", h2_style))
     dept_data = [["ID", "Nama Departemen"]]
     for d in departments:
         dept_data.append([str(d.get("id", "-")), d.get("name", "-")])
@@ -200,7 +222,7 @@ def export_report_without_rankings(
     elements.append(Spacer(1, 5*mm))
 
     # --- Alternatives ---
-    elements.append(Paragraph("C. Daftar Alternatif (Kandidat)", h2_style))
+    elements.append(Paragraph("D. Daftar Alternatif (Kandidat)", h2_style))
     alt_data = [["ID", "Nama", "NIM", "Prodi", "Kelas"]]
     for a in alternatives:
         alt_data.append([
@@ -244,7 +266,8 @@ def export_all_data_to_pdf(
     criteria: list,
     departments: list,
     alternatives: list,
-    rankings_per_department: dict = None
+    rankings_per_department: dict = None,
+    aspects: list = None
 ) -> BytesIO:
     """
     Export seluruh data + perangkingan ke PDF (laporan lengkap dengan ranking).
@@ -278,8 +301,29 @@ def export_all_data_to_pdf(
     elements.append(Paragraph(f"Tanggal: {datetime.now().strftime('%d/%m/%Y %H:%M')}", subtitle_style))
     elements.append(Spacer(1, 8*mm))
 
+    # --- Aspects ---
+    if aspects:
+        elements.append(Paragraph("A. Daftar Aspek", h2_style))
+        asp_data = [["ID", "Nama Aspek", "Bobot"]]
+        for a in aspects:
+            asp_data.append([str(a.get("id", "-")), a.get("name", "-"), str(a.get("weight", "-"))])
+        t_asp = Table(asp_data, colWidths=[40, 300, 100], repeatRows=1)
+        t_asp.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor("#1d1d1d")),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cccccc")),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f5f5f5")]),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        elements.append(t_asp)
+        elements.append(Spacer(1, 5*mm))
+
     # --- Criteria ---
-    elements.append(Paragraph("A. Daftar Kriteria", h2_style))
+    elements.append(Paragraph("B. Daftar Kriteria", h2_style))
     crit_data = [["ID", "Nama Kriteria", "Deskripsi"]]
     for c in criteria:
         crit_data.append([str(c.get("id", "-")), c.get("name", "-"), c.get("description", "-") or "-"])
@@ -299,7 +343,7 @@ def export_all_data_to_pdf(
     elements.append(Spacer(1, 5*mm))
 
     # --- Departments ---
-    elements.append(Paragraph("B. Daftar Departemen", h2_style))
+    elements.append(Paragraph("C. Daftar Departemen", h2_style))
     dept_data = [["ID", "Nama Departemen"]]
     for d in departments:
         dept_data.append([str(d.get("id", "-")), d.get("name", "-")])
@@ -308,7 +352,7 @@ def export_all_data_to_pdf(
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor("#1d1d1d")),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cccccc")),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f5f5f5")]),
         ('TOPPADDING', (0, 0), (-1, -1), 4),
@@ -318,7 +362,7 @@ def export_all_data_to_pdf(
     elements.append(Spacer(1, 5*mm))
 
     # --- Alternatives ---
-    elements.append(Paragraph("C. Daftar Alternatif (Kandidat)", h2_style))
+    elements.append(Paragraph("D. Daftar Alternatif (Kandidat)", h2_style))
     alt_data = [["ID", "Nama", "NIM", "Prodi", "Kelas"]]
     for a in alternatives:
         alt_data.append([
@@ -343,7 +387,7 @@ def export_all_data_to_pdf(
     # --- Rankings per department ---
     if rankings_per_department:
         elements.append(PageBreak())
-        elements.append(Paragraph("D. Hasil Ranking per Departemen", h2_style))
+        elements.append(Paragraph("E. Hasil Ranking per Departemen", h2_style))
         for dept_name, rankings in rankings_per_department.items():
             elements.append(Spacer(1, 4*mm))
             elements.append(Paragraph(f"Departemen: {dept_name}", subtitle_style))
