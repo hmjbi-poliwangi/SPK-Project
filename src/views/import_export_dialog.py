@@ -34,14 +34,14 @@ class ImportExportDialog(QDialog):
         self.mode = mode
         self.setWindowTitle("Export Data" if mode == "export" else "Import Data")
         self.setMinimumSize(500, 400)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
 
         # Judul
         title_text = "📤 Export Data" if mode == "export" else "📥 Import Data"
         title = QLabel(title_text)
-        title.setStyleSheet("font-size: 20px; font-weight: bold; color: #ecec13; margin-bottom: 10px;")
+        title.setStyleSheet("font-size: 20px; font-weight: bold; color: #f2c94c; margin-bottom: 10px;")
         layout.addWidget(title)
 
         if mode == "export":
@@ -57,7 +57,7 @@ class ImportExportDialog(QDialog):
         format_group = QGroupBox("Pilih Format Export")
         format_group.setStyleSheet("""
             QGroupBox {
-                color: #ecec13; font-weight: bold; border: 1px solid #555;
+                color: #f2c94c; font-weight: bold; border: 1px solid #3a4054; border-radius: 8px;
                 margin-top: 10px; padding-top: 15px;
             }
             QGroupBox::title {
@@ -68,12 +68,12 @@ class ImportExportDialog(QDialog):
 
         self.format_group = QButtonGroup()
         self.radio_json = QRadioButton("JSON (.json) - Seluruh data")
-        self.radio_json.setStyleSheet("color: white; padding: 5px;")
+        self.radio_json.setStyleSheet("color: #edeef2; padding: 5px;")
         self.radio_json.setChecked(True)
         self.radio_pdf = QRadioButton("PDF (.pdf) - Laporan lengkap")
-        self.radio_pdf.setStyleSheet("color: white; padding: 5px;")
+        self.radio_pdf.setStyleSheet("color: #edeef2; padding: 5px;")
         self.radio_pdf_ranking = QRadioButton("PDF (.pdf) - Ranking per departemen")
-        self.radio_pdf_ranking.setStyleSheet("color: white; padding: 5px;")
+        self.radio_pdf_ranking.setStyleSheet("color: #edeef2; padding: 5px;")
 
         self.format_group.addButton(self.radio_json, 1)
         self.format_group.addButton(self.radio_pdf, 2)
@@ -87,7 +87,7 @@ class ImportExportDialog(QDialog):
         # Preview / info
         self.preview_area = QTextEdit()
         self.preview_area.setReadOnly(True)
-        self.preview_area.setStyleSheet("background-color: #1d1d1d; color: #aaa; border: 1px solid #555;")
+        self.preview_area.setStyleSheet("background-color: #1b1e2a; color: #c9cad4; border: 1px solid #3a4054; border-radius: 8px;")
         self.preview_area.setMaximumHeight(120)
         self.preview_area.setText("Klik 'Export' untuk mengexport data...")
         layout.addWidget(self.preview_area)
@@ -95,10 +95,10 @@ class ImportExportDialog(QDialog):
         # Tombol
         btn_layout = QHBoxLayout()
         btn_export = QPushButton("💾 Export")
-        btn_export.setStyleSheet("background-color: #2ecc71; color: white; padding: 10px 20px; font-weight: bold; border-radius: 4px;")
+        btn_export.setStyleSheet("background-color: #2fbf71; color: #edeef2; padding: 10px 20px; font-weight: bold; border-radius: 8px;")
         btn_export.clicked.connect(self.do_export)
         btn_cancel = QPushButton("Batal")
-        btn_cancel.setStyleSheet("background-color: #95a5a6; color: white; padding: 10px 20px; border-radius: 4px;")
+        btn_cancel.setStyleSheet("background-color: #55606f; color: #edeef2; padding: 10px 20px; border-radius: 8px;")
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addStretch()
         btn_layout.addWidget(btn_export)
@@ -239,27 +239,27 @@ class ImportExportDialog(QDialog):
             "Data yang akan di-import: Kriteria, Departemen, Profil, Alternatif, Nilai.\n"
             "Data dengan nama yang sudah ada akan dilewati (skip)."
         )
-        info.setStyleSheet("color: #ccc; padding: 10px;")
+        info.setStyleSheet("color: #c9cad4; padding: 6px;")
         info.setWordWrap(True)
         layout.addWidget(info)
 
         # Preview area
         self.preview_area = QTextEdit()
         self.preview_area.setReadOnly(True)
-        self.preview_area.setStyleSheet("background-color: #1d1d1d; color: #aaa; border: 1px solid #555;")
+        self.preview_area.setStyleSheet("background-color: #1b1e2a; color: #c9cad4; border: 1px solid #3a4054; border-radius: 8px;")
         self.preview_area.setPlaceholderText("Pilih file JSON untuk melihat pratinjau...")
         layout.addWidget(self.preview_area)
 
         # Tombol
         btn_layout = QHBoxLayout()
         btn_select = QPushButton("📂 Pilih File JSON")
-        btn_select.setStyleSheet("background-color: #3498db; color: white; padding: 10px 20px; font-weight: bold; border-radius: 4px;")
+        btn_select.setStyleSheet("background-color: #3d9bf1; color: #edeef2; padding: 10px 20px; font-weight: bold; border-radius: 8px;")
         btn_select.clicked.connect(self.select_import_file)
         btn_import = QPushButton("📥 Import")
-        btn_import.setStyleSheet("background-color: #2ecc71; color: white; padding: 10px 20px; font-weight: bold; border-radius: 4px;")
+        btn_import.setStyleSheet("background-color: #2fbf71; color: #edeef2; padding: 10px 20px; font-weight: bold; border-radius: 8px;")
         btn_import.clicked.connect(self.do_import)
         btn_cancel = QPushButton("Batal")
-        btn_cancel.setStyleSheet("background-color: #95a5a6; color: white; padding: 10px 20px; border-radius: 4px;")
+        btn_cancel.setStyleSheet("background-color: #55606f; color: #edeef2; padding: 10px 20px; border-radius: 8px;")
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addWidget(btn_select)
         btn_layout.addStretch()

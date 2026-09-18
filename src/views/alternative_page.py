@@ -16,22 +16,23 @@ from src.models.data_structure import (
 class AlternativePage(QWidget):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background-color: #1d1d1d; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #14161f; color: #edeef2;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 20, 30, 20)
 
         title = QLabel("👥 Manajemen Alternatif (Kandidat)")
-        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #ecec13;")
+        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #f2c94c;")
         layout.addWidget(title)
 
         toolbar = QHBoxLayout()
         self.btn_tambah = QPushButton("+ Tambah Alternatif")
         self.btn_tambah.setStyleSheet("""
             QPushButton {
-                background-color: #ecec13; color: #1d1d1d;
-                padding: 8px 16px; font-weight: bold; border-radius: 4px;
+                background-color: #f2c94c; color: #14161f; border: none;
+                padding: 9px 16px; font-weight: bold; border-radius: 8px;
             }
-            QPushButton:hover { background-color: #f5f530; }
+            QPushButton:hover { background-color: #ffd97a; }
+            QPushButton:pressed { background-color: #d9a62b; }
         """)
         self.btn_tambah.clicked.connect(self.open_add_dialog)
         toolbar.addWidget(self.btn_tambah)
@@ -47,13 +48,12 @@ class AlternativePage(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setStyleSheet("""
             QTableWidget {
-                background-color: #2b2b2b; gridline-color: #444;
+                background-color: #1b1e2a; gridline-color: #3a4054;
+                border: 1px solid #3a4054; border-radius: 8px; alternate-background-color: #232838;
             }
-            QTableWidget::item { color: #f0f0f0; padding: 5px; }
-            QHeaderView::section {
-                background-color: #333; color: white; padding: 6px;
-                border: 1px solid #444;
-            }
+            QTableWidget::item { color: #edeef2; padding: 6px; selection-background-color: #3b4361; selection-color: #ffffff; }
+            QHeaderView::section { background-color: #262a3a; color: #e6e9f2; padding: 8px; border: 1px solid #3a4054; font-weight: 600; }
+            QTableCornerButton::section { background-color: #262a3a; border: 1px solid #3a4054; }
         """)
         layout.addWidget(self.table)
 
@@ -76,15 +76,15 @@ class AlternativePage(QWidget):
             actions_layout.setSpacing(5)
 
             btn_detail = QPushButton("Nilai")
-            btn_detail.setStyleSheet("background-color: #9b59b6; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_detail.setStyleSheet("background-color: #9b59b6; color: white; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_detail.clicked.connect(lambda checked, aid=alt["id"]: self.open_scores_dialog(aid))
 
             btn_edit = QPushButton("Edit")
-            btn_edit.setStyleSheet("background-color: #3498db; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_edit.setStyleSheet("background-color: #3d9bf1; color: white; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_edit.clicked.connect(lambda checked, aid=alt["id"]: self.open_edit_dialog(aid))
 
             btn_delete = QPushButton("Hapus")
-            btn_delete.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_delete.setStyleSheet("background-color: #e5484d; color: white; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_delete.clicked.connect(lambda checked, aid=alt["id"]: self.delete_alternative(aid))
 
             actions_layout.addWidget(btn_detail)
@@ -127,25 +127,25 @@ class AlternativeFormDialog(QDialog):
         self.alternative_id = alternative_id
         self.setWindowTitle("Tambah Alternatif" if mode == "add" else "Edit Alternatif")
         self.setMinimumSize(400, 150)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
         self.name_input = QLineEdit()
-        self.name_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.name_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
 
         self.info_input = QLineEdit()
-        self.info_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.info_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
 
         self.kelas_input = QLineEdit()
-        self.kelas_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.kelas_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
 
         self.prodi_input = QLineEdit()
-        self.prodi_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.prodi_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
 
         self.nim_input = QLineEdit()
-        self.nim_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.nim_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
 
         form.addRow("Nama:", self.name_input)
         form.addRow("NIM:", self.nim_input)
@@ -156,10 +156,10 @@ class AlternativeFormDialog(QDialog):
 
         btn_layout = QHBoxLayout()
         btn_save = QPushButton("Simpan")
-        btn_save.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_save.setStyleSheet("background-color: #2fbf71; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: bold;")
         btn_save.clicked.connect(self.save)
         btn_cancel = QPushButton("Batal")
-        btn_cancel.setStyleSheet("background-color: #95a5a6; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_cancel.setStyleSheet("background-color: #55606f; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px;")
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addStretch()
         btn_layout.addWidget(btn_save)
@@ -214,7 +214,7 @@ class ScoreDialog(QDialog):
         self.alternative_id = alternative_id
         self.setWindowTitle("Nilai Kriteria Alternatif")
         self.setMinimumSize(500, 300)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
 
@@ -222,7 +222,7 @@ class ScoreDialog(QDialog):
         with get_db_read() as conn:
             alt = conn.execute("SELECT name FROM alternatives WHERE id = ?", (alternative_id,)).fetchone()
         title = QLabel(f"Nilai untuk: {alt['name']}")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #ecec13;")
+        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #f2c94c;")
         layout.addWidget(title)
 
         # Ambil semua kriteria global
@@ -238,9 +238,9 @@ class ScoreDialog(QDialog):
 
             row_layout = QHBoxLayout()
             lbl = QLabel(criteria_name)
-            lbl.setStyleSheet("color: white;")
+            lbl.setStyleSheet("color: #edeef2;")
             spin = QDoubleSpinBox()
-            spin.setStyleSheet("background-color: #1d1d1d; color: white; border: 1px solid #555;")
+            spin.setStyleSheet("background-color: #1b1e2a; color: #ffffff; border: 1px solid #3a4054; border-radius: 6px;")
             spin.setRange(0, 9999)
             spin.setDecimals(2)
             spin.setValue(current_val)
@@ -250,7 +250,7 @@ class ScoreDialog(QDialog):
             self.score_inputs[criteria_id] = spin
 
         btn_save = QPushButton("Simpan Semua Nilai")
-        btn_save.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_save.setStyleSheet("background-color: #2fbf71; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: bold;")
         btn_save.clicked.connect(self.save_all)
         layout.addWidget(btn_save, alignment=Qt.AlignmentFlag.AlignRight)
 

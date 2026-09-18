@@ -20,7 +20,7 @@ const ALT_ID = parseInt(document.getElementById('alt-id').value, 10);
 
 function loadScores() {
     const container = document.getElementById('scores-container');
-    container.innerHTML = '<p style="color:#95a5a6;">Memuat...</p>';
+    container.innerHTML = '<p class="text-muted">Memuat...</p>';
 
     Promise.all([
         fetch('/api/criteria').then(r => r.json()),
@@ -33,7 +33,7 @@ function loadScores() {
 
         criteriaList.forEach(c => {
             const item = document.createElement('div');
-            item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #444;';
+            item.className = 'score-row';
 
             const label = document.createElement('span');
             label.className = 'score-label';
@@ -45,7 +45,7 @@ function loadScores() {
             input.min = '0';
             input.max = '5';
             input.value = currentScores[c.id] || 0;
-            input.style.cssText = 'width:120px;padding:5px;background-color:#1d1d1d;color:white;border:1px solid #555;border-radius:3px;';
+            input.className = 'score-input';
             input.dataset.criteriaId = c.id;
 
             item.appendChild(label);
@@ -54,7 +54,7 @@ function loadScores() {
         });
 
         if (criteriaList.length === 0) {
-            container.innerHTML = '<p style="color:#95a5a6;">Belum ada kriteria. Silakan tambah kriteria terlebih dahulu.</p>';
+            container.innerHTML = '<p class="text-muted">Belum ada kriteria. Silakan tambah kriteria terlebih dahulu.</p>';
         }
     });
 }

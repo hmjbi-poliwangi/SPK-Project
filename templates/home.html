@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="text-center" style="margin-top: 100px;">
+<div class="hero-card">
+    <div class="hero-icon">🎯</div>
     <h1 class="home-title">Sistem Pendukung Keputusan<br>Profile Matching</h1>
-    <p class="page-subtitle">Pilih menu di samping untuk memulai</p>
+    <p class="page-subtitle">Bandingkan profil calon dengan target profil setiap departemen, rangking otomatis.</p>
+    <div class="hero-actions">
+        <a href="/departments" class="btn btn-yellow">🏢 Buka Departemen</a>
+        <a href="/alternatives" class="btn btn-blue">👥 Buka Alternatif</a>
+        <a href="/import-export" class="btn btn-purple">📦 Import / Export</a>
+    </div>
 </div>
 {% endblock %}

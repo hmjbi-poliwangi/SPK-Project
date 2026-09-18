@@ -10,6 +10,7 @@
 
 <h3 style="color:#f0f0f0;margin-bottom:10px;">Kriteria Profil:</h3>
 
+<div class="table-wrapper">
 <table class="data-table" id="profile-table">
     <thead>
         <tr>
@@ -23,6 +24,7 @@
     </thead>
     <tbody id="profile-table-body"></tbody>
 </table>
+</div>
 
 <div class="toolbar mt-10">
     <button class="btn btn-green" onclick="openProfileModal()">+ Tambah Kriteria</button>
@@ -143,7 +145,7 @@ function loadProfiles() {
                 headerRow.className = 'aspect-group-header';
                 const weightText = group.aspect_weight != null ? ` (bobot: ${group.aspect_weight})` : '';
                 headerRow.innerHTML = `
-                    <td colspan="6" style="background-color:#2d2d2d;color:#ecec13;font-weight:bold;padding:8px 10px;">
+                    <td colspan="6">
                         📊 ${escapeHtml(group.aspect_name)}${weightText}
                     </td>
                 `;
@@ -151,15 +153,19 @@ function loadProfiles() {
 
                 // Baris profil dalam grup
                 group.profiles.forEach(p => {
-                    let typeDisplay = p.type === 'core' ? 'Core' : 'Secondary';
-                    if (!p.is_active) typeDisplay += ' (nonaktif)';
+                    const typeBadge = p.type === 'core'
+                        ? '<span class="badge badge-core">Core</span>'
+                        : '<span class="badge badge-secondary">Secondary</span>';
+                    const inactiveBadge = p.is_active
+                        ? ''
+                        : ' <span class="badge badge-inactive">nonaktif</span>';
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${p.id}</td>
                         <td>${escapeHtml(p.criteria_name)}</td>
                         <td>${p.target_value}</td>
                         <td>${p.weight.toFixed(3)}</td>
-                        <td>${typeDisplay}</td>
+                        <td>${typeBadge}${inactiveBadge}</td>
                         <td>
                             <div class="btn-group">
                                 <button class="btn btn-orange btn-sm" onclick="editProfile(${p.id})">Edit</button>

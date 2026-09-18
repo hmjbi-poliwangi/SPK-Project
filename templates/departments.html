@@ -6,6 +6,7 @@
     <button class="btn btn-yellow" onclick="openDeptModal()">+ Tambah Departemen</button>
 </div>
 
+<div class="table-wrapper">
 <table class="data-table" id="dept-table">
     <thead>
         <tr>
@@ -16,6 +17,7 @@
     </thead>
     <tbody id="dept-table-body"></tbody>
 </table>
+</div>
 
 <!-- Modal Tambah/Edit Departemen -->
 <div class="modal-overlay" id="dept-modal">
@@ -50,7 +52,7 @@ function loadDepartments() {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${d.id}</td>
-                    <td><a href="/departments/${d.id}" style="color:#ecec13;text-decoration:none;">${escapeHtml(d.name)}</a></td>
+                    <td><a href="/departments/${d.id}" class="link-brand">${escapeHtml(d.name)}</a></td>
                     <td>
                         <div class="btn-group">
                             <a href="/departments/${d.id}" class="btn btn-purple btn-sm">Detail</a>

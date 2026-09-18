@@ -19,13 +19,13 @@ from src.engine.profile_matching import rank_alternatives
 class DepartmentPage(QWidget):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background-color: #1d1d1d; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #14161f; color: #edeef2;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 20, 30, 20)
 
         # Judul
         title = QLabel("🏢 Manajemen Departemen")
-        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #ecec13;")
+        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #f2c94c;")
         layout.addWidget(title)
 
         # Toolbar
@@ -33,10 +33,10 @@ class DepartmentPage(QWidget):
         btn_tambah = QPushButton("+ Tambah Departemen")
         btn_tambah.setStyleSheet("""
             QPushButton {
-                background-color: #ecec13; color: #1d1d1d;
-                padding: 8px 16px; font-weight: bold; border-radius: 4px;
+                background-color: #f2c94c; color: #1d1d1d;
+                padding: 8px 16px; font-weight: bold; border-radius: 8px;
             }
-            QPushButton:hover { background-color: #f5f530; }
+            QPushButton:hover { background-color: #ffd97a; }
         """)
         btn_tambah.clicked.connect(self.open_add_dialog)
         toolbar.addWidget(btn_tambah)
@@ -52,12 +52,12 @@ class DepartmentPage(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setStyleSheet("""
             QTableWidget {
-                background-color: #2b2b2b; gridline-color: #444;
+                background-color: #1b1e2a; gridline-color: #3a4054; border: 1px solid #3a4054; border-radius: 8px; alternate-background-color: #232838;
             }
-            QTableWidget::item { color: #f0f0f0; padding: 5px; }
+            QTableWidget::item { color: #edeef2; padding: 6px; selection-background-color: #3b4361; selection-color: #ffffff; }
             QHeaderView::section {
-                background-color: #333; color: white; padding: 6px;
-                border: 1px solid #444;
+                background-color: #262a3a; color: #e6e9f2; padding: 8px; font-weight: 600; border: 1px solid #3a4054;
+                border: 1px solid #3a4054;
             }
         """)
         layout.addWidget(self.table)
@@ -84,11 +84,11 @@ class DepartmentPage(QWidget):
             actions_layout.setSpacing(5)
 
             btn_edit = QPushButton("Edit")
-            btn_edit.setStyleSheet("background-color: #3498db; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_edit.setStyleSheet("background-color: #3d9bf1; color: #edeef2; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_edit.clicked.connect(lambda checked, did=dept["id"]: self.open_edit_dialog(did))
 
             btn_delete = QPushButton("Hapus")
-            btn_delete.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_delete.setStyleSheet("background-color: #e5484d; color: #edeef2; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_delete.clicked.connect(lambda checked, did=dept["id"]: self.delete_department(did))
 
             actions_layout.addWidget(btn_edit)
@@ -129,21 +129,21 @@ class DepartmentFormDialog(QDialog):
         self.department_id = department_id
         self.setWindowTitle("Tambah Departemen" if mode == "add" else "Ubah Nama Departemen")
         self.setMinimumSize(400, 150)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
         self.name_input = QLineEdit(current_name)
-        self.name_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.name_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
         form.addRow("Nama Departemen:", self.name_input)
         layout.addLayout(form)
 
         btn_layout = QHBoxLayout()
         btn_save = QPushButton("Simpan")
-        btn_save.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_save.setStyleSheet("background-color: #2fbf71; color: #edeef2; padding: 8px 16px; border-radius: 8px; font-weight: bold;")
         btn_save.clicked.connect(self.save)
         btn_cancel = QPushButton("Batal")
-        btn_cancel.setStyleSheet("background-color: #95a5a6; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_cancel.setStyleSheet("background-color: #55606f; color: #edeef2; padding: 8px 16px; border-radius: 8px;")
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addStretch()
         btn_layout.addWidget(btn_save)
@@ -174,16 +174,16 @@ class DepartmentDetailDialog(QDialog):
         self.department_id = department_id
         self.setWindowTitle("Detail Departemen")
         self.setMinimumSize(650, 500)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
 
         # Nama departemen dan tombol ubah
         header_layout = QHBoxLayout()
         self.dept_name_label = QLabel()
-        self.dept_name_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ecec13;")
+        self.dept_name_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #f2c94c;")
         btn_rename = QPushButton("Ubah Nama")
-        btn_rename.setStyleSheet("background-color: #3498db; color: white; padding: 6px 12px; border-radius: 3px;")
+        btn_rename.setStyleSheet("background-color: #3d9bf1; color: #edeef2; border: none; padding: 7px 13px; border-radius: 6px;")
         btn_rename.clicked.connect(self.rename_department)
         header_layout.addWidget(self.dept_name_label)
         header_layout.addStretch()
@@ -200,30 +200,30 @@ class DepartmentDetailDialog(QDialog):
         self.profile_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.profile_table.setStyleSheet("""
             QTableWidget {
-                background-color: #1d1d1d; gridline-color: #444;
+                background-color: #1b1e2a; gridline-color: #3a4054; border: 1px solid #3a4054; border-radius: 8px; alternate-background-color: #232838;
             }
-            QTableWidget::item { color: #f0f0f0; padding: 5px; }
+            QTableWidget::item { color: #edeef2; padding: 6px; selection-background-color: #3b4361; selection-color: #ffffff; }
             QHeaderView::section {
-                background-color: #333; color: white; padding: 6px;
-                border: 1px solid #444;
+                background-color: #262a3a; color: #e6e9f2; padding: 8px; font-weight: 600; border: 1px solid #3a4054;
+                border: 1px solid #3a4054;
             }
         """)
         layout.addWidget(self.profile_table)
 
         # Tombol tambah profil
         btn_add_profile = QPushButton("+ Tambah Kriteria")
-        btn_add_profile.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_add_profile.setStyleSheet("background-color: #2fbf71; color: #edeef2; padding: 8px 16px; border-radius: 8px; font-weight: bold;")
         btn_add_profile.clicked.connect(self.add_profile)
         layout.addWidget(btn_add_profile, alignment=Qt.AlignmentFlag.AlignLeft)
         btn_ranking = QPushButton("🏆 Peringkat Alternatif")
-        btn_ranking.setStyleSheet("background-color: #9b59b6; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_ranking.setStyleSheet("background-color: #9b59b6; color: #edeef2; padding: 8px 16px; border-radius: 8px; font-weight: bold;")
         btn_ranking.clicked.connect(self.show_ranking)
         layout.addWidget(btn_ranking, alignment=Qt.AlignmentFlag.AlignLeft)
         
 
         # Tombol tutup
         btn_close = QPushButton("Tutup")
-        btn_close.setStyleSheet("background-color: #7f8c8d; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_close.setStyleSheet("background-color: #55606f; color: #edeef2; padding: 8px 16px; border-radius: 8px;")
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignRight)
 
@@ -264,11 +264,11 @@ class DepartmentDetailDialog(QDialog):
             actions_layout.setSpacing(5)
 
             btn_edit_prof = QPushButton("Edit")
-            btn_edit_prof.setStyleSheet("background-color: #f39c12; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_edit_prof.setStyleSheet("background-color: #f2994a; color: #edeef2; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_edit_prof.clicked.connect(lambda checked, pid=prof["id"]: self.edit_profile(pid))
 
             btn_del_prof = QPushButton("Hapus")
-            btn_del_prof.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_del_prof.setStyleSheet("background-color: #e5484d; color: #edeef2; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_del_prof.clicked.connect(lambda checked, pid=prof["id"]: self.delete_profile(pid))
 
             actions_layout.addWidget(btn_edit_prof)
@@ -313,27 +313,27 @@ class ProfileFormDialog(QDialog):
         self.profile_id = profile_id
         self.setWindowTitle("Tambah Profil" if profile_id is None else "Edit Profil")
         self.setMinimumSize(400, 300)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
         # Pilih kriteria
         self.criteria_combo = QComboBox()
-        self.criteria_combo.setStyleSheet("background-color: #1d1d1d; color: white; padding: 4px; border: 1px solid #555;")
+        self.criteria_combo.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 6px; border: 1px solid #3a4054; border-radius: 6px;")
         self.load_criteria()
         form.addRow("Kriteria:", self.criteria_combo)
 
         # Target value
         self.target_input = QDoubleSpinBox()
-        self.target_input.setStyleSheet("background-color: #1d1d1d; color: white; border: 1px solid #555;")
+        self.target_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; border: 1px solid #3a4054; border-radius: 6px;")
         self.target_input.setRange(0, 9999)
         self.target_input.setDecimals(2)
         form.addRow("Target Value:", self.target_input)
 
         # Weight
         self.weight_input = QDoubleSpinBox()
-        self.weight_input.setStyleSheet("background-color: #1d1d1d; color: white; border: 1px solid #555;")
+        self.weight_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; border: 1px solid #3a4054; border-radius: 6px;")
         self.weight_input.setRange(0, 1)
         self.weight_input.setDecimals(3)
         self.weight_input.setSingleStep(0.05)
@@ -341,7 +341,7 @@ class ProfileFormDialog(QDialog):
 
         # Aspek
         self.aspect_combo = QComboBox()
-        self.aspect_combo.setStyleSheet("background-color: #1d1d1d; color: white; padding: 4px; border: 1px solid #555;")
+        self.aspect_combo.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 6px; border: 1px solid #3a4054; border-radius: 6px;")
         self.load_aspects()
         form.addRow("Aspek:", self.aspect_combo)
 
@@ -349,8 +349,8 @@ class ProfileFormDialog(QDialog):
         self.type_group = QButtonGroup()
         self.radio_core = QRadioButton("Core")
         self.radio_secondary = QRadioButton("Secondary")
-        self.radio_core.setStyleSheet("color: white;")
-        self.radio_secondary.setStyleSheet("color: white;")
+        self.radio_core.setStyleSheet("color: #edeef2;")
+        self.radio_secondary.setStyleSheet("color: #edeef2;")
         self.type_group.addButton(self.radio_core, 0)
         self.type_group.addButton(self.radio_secondary, 1)
         radio_layout = QHBoxLayout()
@@ -361,7 +361,7 @@ class ProfileFormDialog(QDialog):
         # Aktif (hanya untuk edit)
         self.active_check = QCheckBox("Profil Aktif")
         self.active_check.setChecked(True)
-        self.active_check.setStyleSheet("color: white;")
+        self.active_check.setStyleSheet("color: #edeef2;")
         if profile_id is None:
             self.active_check.hide()  # untuk tambah, default aktif
         form.addRow(self.active_check)
@@ -371,10 +371,10 @@ class ProfileFormDialog(QDialog):
         # Simpan / Batal
         btn_layout = QHBoxLayout()
         btn_save = QPushButton("Simpan")
-        btn_save.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_save.setStyleSheet("background-color: #2fbf71; color: #edeef2; padding: 8px 16px; border-radius: 8px; font-weight: bold;")
         btn_save.clicked.connect(self.save)
         btn_cancel = QPushButton("Batal")
-        btn_cancel.setStyleSheet("background-color: #95a5a6; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_cancel.setStyleSheet("background-color: #55606f; color: #edeef2; padding: 8px 16px; border-radius: 8px;")
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addStretch()
         btn_layout.addWidget(btn_save)
@@ -444,11 +444,11 @@ class RankingDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Peringkat Alternatif (Profile Matching)")
         self.setMinimumSize(500, 350)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
         layout = QVBoxLayout(self)
 
         title = QLabel("Hasil Peringkat Alternatif")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #ecec13; margin-bottom: 10px;")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #f2c94c; margin-bottom: 10px;")
         layout.addWidget(title)
 
         table = QTableWidget()
@@ -459,12 +459,12 @@ class RankingDialog(QDialog):
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         table.setStyleSheet("""
             QTableWidget {
-                background-color: #1d1d1d; gridline-color: #444;
+                background-color: #1b1e2a; gridline-color: #3a4054; border: 1px solid #3a4054; border-radius: 8px; alternate-background-color: #232838;
             }
-            QTableWidget::item { color: #f0f0f0; padding: 5px; }
+            QTableWidget::item { color: #edeef2; padding: 6px; selection-background-color: #3b4361; selection-color: #ffffff; }
             QHeaderView::section {
-                background-color: #333; color: white; padding: 6px;
-                border: 1px solid #444;
+                background-color: #262a3a; color: #e6e9f2; padding: 8px; font-weight: 600; border: 1px solid #3a4054;
+                border: 1px solid #3a4054;
             }
         """)
         table.setRowCount(len(rankings))
@@ -474,6 +474,6 @@ class RankingDialog(QDialog):
         layout.addWidget(table)
 
         btn_close = QPushButton("Tutup")
-        btn_close.setStyleSheet("background-color: #7f8c8d; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_close.setStyleSheet("background-color: #55606f; color: #edeef2; padding: 8px 16px; border-radius: 8px;")
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignRight)

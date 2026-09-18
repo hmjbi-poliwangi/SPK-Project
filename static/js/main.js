@@ -63,6 +63,15 @@ document.addEventListener("click", function (e) {
   }
 });
 
+// Close modal with Escape key
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" || e.key === "Esc" || e.keyCode === 27) {
+    document
+      .querySelectorAll(".modal-overlay.open")
+      .forEach((m) => m.classList.remove("open"));
+  }
+});
+
 // Highlight active page in sidebar
 document.addEventListener("DOMContentLoaded", function () {
   const path = window.location.pathname;

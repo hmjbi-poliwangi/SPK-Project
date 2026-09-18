@@ -32,46 +32,54 @@ class MainWindow(QMainWindow):
         sidebar.setFixedWidth(200)
         sidebar.setStyleSheet("""
             #sidebar {
-                background-color: #ecec13;
+                background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #131722, stop:1 #1a1d29);
             }
             QPushButton {
-                color: black;
+                color: #c3c8d4;
                 background: transparent;
                 border: none;
-                padding: 15px 10px;
+                border-radius: 9px;
+                padding: 11px 12px;
                 text-align: left;
-                font-size: 14px;
+                font-size: 13px;
+                font-weight: 500;
             }
             QPushButton:hover {
-                background-color: #1f1f1f;
-                color: #f0f0f0
+                background-color: rgba(255, 255, 255, 22);
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background-color: #3d3d3d;
+                background-color: rgba(242, 201, 76, 34);
+                color: #ffffff;
             }
             QPushButton#exit_btn {
                 margin-top: 20px;
             }
             QPushButton#exit_btn:hover {
-                background-color: #e74c3c;
+                background-color: rgba(229, 72, 77, 38);
+                color: #ff9b9b;
             }
             QPushButton#import_btn {
-                background-color: #2ecc71;
-                color: white;
+                background-color: #2fbf71;
+                color: #ffffff;
                 font-weight: bold;
+                border-radius: 8px;
+                padding: 9px 12px;
             }
             QPushButton#import_btn:hover {
-                background-color: #27ae60;
-                color: white;
+                background-color: #3bcb81;
+                color: #ffffff;
             }
             QPushButton#export_btn {
-                background-color: #3498db;
-                color: white;
+                background-color: #3d9bf1;
+                color: #ffffff;
                 font-weight: bold;
+                border-radius: 8px;
+                padding: 9px 12px;
             }
             QPushButton#export_btn:hover {
-                background-color: #2980b9;
-                color: white;
+                background-color: #63b1f3;
+                color: #ffffff;
             }
         """)
 
@@ -80,8 +88,8 @@ class MainWindow(QMainWindow):
         sidebar_layout.setSpacing(0)
 
         # Judul sidebar
-        brand = QLabel("Menu Utama")
-        brand.setStyleSheet("color: #f0f0f0; font-size: 18px; font-weight: bold; padding: 10px; background-color: #1d1d1d;")
+        brand = QLabel("🎯  SPK Profile Matching")
+        brand.setStyleSheet("color: #f2c94c; font-size: 14px; font-weight: bold; padding: 12px 10px; background-color: #1c2030; border-radius: 9px;")
         brand.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(brand)
         sidebar_layout.addSpacing(20)
@@ -115,7 +123,7 @@ class MainWindow(QMainWindow):
 
         # --- Area konten (Stacked Widget) ---
         self.stacked_widget = QStackedWidget()
-        self.stacked_widget.setStyleSheet("background-color: #1d1d1d;")
+        self.stacked_widget.setStyleSheet("QStackedWidget { background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #14161f, stop:1 #171a26); }")
 
         # Halaman-halaman
         self.home_page = HomePage()

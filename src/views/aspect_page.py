@@ -12,22 +12,23 @@ from src.models.data_structure import (
 class AspectPage(QWidget):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background-color: #1d1d1d; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #14161f; color: #edeef2;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 20, 30, 20)
 
         title = QLabel("📊 Manajemen Aspek")
-        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #ecec13;")
+        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #f2c94c;")
         layout.addWidget(title)
 
         toolbar = QHBoxLayout()
         btn_tambah = QPushButton("+ Tambah Aspek")
         btn_tambah.setStyleSheet("""
             QPushButton {
-                background-color: #ecec13; color: #1d1d1d;
-                padding: 8px 16px; font-weight: bold; border-radius: 4px;
+                background-color: #f2c94c; color: #14161f; border: none;
+                padding: 9px 16px; font-weight: bold; border-radius: 8px;
             }
-            QPushButton:hover { background-color: #f5f530; }
+            QPushButton:hover { background-color: #ffd97a; }
+            QPushButton:pressed { background-color: #d9a62b; }
         """)
         btn_tambah.clicked.connect(self.open_add_dialog)
         toolbar.addWidget(btn_tambah)
@@ -42,13 +43,12 @@ class AspectPage(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setStyleSheet("""
             QTableWidget {
-                background-color: #2b2b2b; gridline-color: #444;
+                background-color: #1b1e2a; gridline-color: #3a4054;
+                border: 1px solid #3a4054; border-radius: 8px; alternate-background-color: #232838;
             }
-            QTableWidget::item { color: #f0f0f0; padding: 5px; }
-            QHeaderView::section {
-                background-color: #333; color: white; padding: 6px;
-                border: 1px solid #444;
-            }
+            QTableWidget::item { color: #edeef2; padding: 6px; selection-background-color: #3b4361; selection-color: #ffffff; }
+            QHeaderView::section { background-color: #262a3a; color: #e6e9f2; padding: 8px; border: 1px solid #3a4054; font-weight: 600; }
+            QTableCornerButton::section { background-color: #262a3a; border: 1px solid #3a4054; }
         """)
         layout.addWidget(self.table)
 
@@ -68,11 +68,11 @@ class AspectPage(QWidget):
             actions_layout.setSpacing(5)
 
             btn_edit = QPushButton("Edit")
-            btn_edit.setStyleSheet("background-color: #3498db; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_edit.setStyleSheet("background-color: #3d9bf1; color: white; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_edit.clicked.connect(lambda checked, aid=asp["id"], n=asp["name"], w=asp["weight"]: self.open_edit_dialog(aid, n, w))
 
             btn_delete = QPushButton("Hapus")
-            btn_delete.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_delete.setStyleSheet("background-color: #e5484d; color: white; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_delete.clicked.connect(lambda checked, aid=asp["id"]: self.delete_aspect(aid))
 
             actions_layout.addWidget(btn_edit)
@@ -109,17 +109,17 @@ class AspectFormDialog(QDialog):
         self.aspect_id = aspect_id
         self.setWindowTitle("Tambah Aspek" if mode == "add" else "Edit Aspek")
         self.setMinimumSize(400, 180)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
         self.name_input = QLineEdit(current_name)
-        self.name_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.name_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
         form.addRow("Nama Aspek:", self.name_input)
 
         self.weight_input = QDoubleSpinBox()
-        self.weight_input.setStyleSheet("background-color: #1d1d1d; color: white; border: 1px solid #555;")
+        self.weight_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; border: 1px solid #3a4054; border-radius: 6px;")
         self.weight_input.setRange(0, 100)
         self.weight_input.setDecimals(2)
         self.weight_input.setValue(current_weight)
@@ -129,10 +129,10 @@ class AspectFormDialog(QDialog):
 
         btn_layout = QHBoxLayout()
         btn_save = QPushButton("Simpan")
-        btn_save.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_save.setStyleSheet("background-color: #2fbf71; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: bold;")
         btn_save.clicked.connect(self.save)
         btn_cancel = QPushButton("Batal")
-        btn_cancel.setStyleSheet("background-color: #95a5a6; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_cancel.setStyleSheet("background-color: #55606f; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px;")
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addStretch()
         btn_layout.addWidget(btn_save)

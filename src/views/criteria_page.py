@@ -13,23 +13,24 @@ from src.models.data_structure import (
 class CriteriaPage(QWidget):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background-color: #1d1d1d; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #14161f; color: #edeef2;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 20, 30, 20)
 
         # Judul
         title = QLabel("📋 Manajemen Kriteria")
-        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #ecec13;")
+        title.setStyleSheet("font-size: 22px; font-weight: bold; color: #f2c94c;")
         layout.addWidget(title)
 
         # Toolbar
         btn_tambah = QPushButton("+ Tambah Kriteria")
         btn_tambah.setStyleSheet("""
             QPushButton {
-                background-color: #ecec13; color: #1d1d1d;
-                padding: 8px 16px; font-weight: bold; border-radius: 4px;
+                background-color: #f2c94c; color: #14161f; border: none;
+                padding: 9px 16px; font-weight: bold; border-radius: 8px;
             }
-            QPushButton:hover { background-color: #f5f530; }
+            QPushButton:hover { background-color: #ffd97a; }
+            QPushButton:pressed { background-color: #d9a62b; }
         """)
         btn_tambah.clicked.connect(self.open_add_dialog)
         layout.addWidget(btn_tambah, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -44,13 +45,12 @@ class CriteriaPage(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setStyleSheet("""
             QTableWidget {
-                background-color: #2b2b2b; gridline-color: #444;
+                background-color: #1b1e2a; gridline-color: #3a4054;
+                border: 1px solid #3a4054; border-radius: 8px; alternate-background-color: #232838;
             }
-            QTableWidget::item { color: #f0f0f0; padding: 5px; }
-            QHeaderView::section {
-                background-color: #333; color: white; padding: 6px;
-                border: 1px solid #444;
-            }
+            QTableWidget::item { color: #edeef2; padding: 6px; selection-background-color: #3b4361; selection-color: #ffffff; }
+            QHeaderView::section { background-color: #262a3a; color: #e6e9f2; padding: 8px; border: 1px solid #3a4054; font-weight: 600; }
+            QTableCornerButton::section { background-color: #262a3a; border: 1px solid #3a4054; }
         """)
         layout.addWidget(self.table)
 
@@ -72,11 +72,11 @@ class CriteriaPage(QWidget):
             actions_layout.setSpacing(5)
 
             btn_edit = QPushButton("Edit")
-            btn_edit.setStyleSheet("background-color: #3498db; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_edit.setStyleSheet("background-color: #3d9bf1; color: white; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_edit.clicked.connect(lambda checked, cid=crit["id"]: self.open_edit_dialog(cid))
 
             btn_delete = QPushButton("Hapus")
-            btn_delete.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 3px; padding: 4px 8px;")
+            btn_delete.setStyleSheet("background-color: #e5484d; color: white; border: none; border-radius: 6px; padding: 6px 11px;")
             btn_delete.clicked.connect(lambda checked, cid=crit["id"]: self.delete_criteria(cid))
 
             actions_layout.addWidget(btn_edit)
@@ -113,16 +113,16 @@ class CriteriaFormDialog(QDialog):
         self.criteria_id = criteria_id
         self.setWindowTitle("Tambah Kriteria" if mode == "add" else "Edit Kriteria")
         self.setMinimumSize(450, 350)
-        self.setStyleSheet("background-color: #2b2b2b; color: #f0f0f0;")
+        self.setStyleSheet("background-color: #1f2230; color: #edeef2;")
 
         layout = QVBoxLayout(self)
 
         # Form
         form_layout = QFormLayout()
         self.name_input = QLineEdit()
-        self.name_input.setStyleSheet("background-color: #1d1d1d; color: white; padding: 5px; border: 1px solid #555;")
+        self.name_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
         self.desc_input = QTextEdit()
-        self.desc_input.setStyleSheet("background-color: #1d1d1d; color: white; border: 1px solid #555;")
+        self.desc_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; padding: 7px; border: 1px solid #3a4054; border-radius: 6px;")
 
         form_layout.addRow("Nama Kriteria:", self.name_input)
         form_layout.addRow("Deskripsi:", self.desc_input)
@@ -132,11 +132,11 @@ class CriteriaFormDialog(QDialog):
         if mode == "edit":
             layout.addSpacing(10)
             label_dept = QLabel("Digunakan oleh Departemen:")
-            label_dept.setStyleSheet("font-weight: bold; color: #ecec13;")
+            label_dept.setStyleSheet("font-weight: bold; color: #f2c94c;")
             layout.addWidget(label_dept)
 
             self.dept_list = QListWidget()
-            self.dept_list.setStyleSheet("background-color: #1d1d1d; color: white; border: 1px solid #555;")
+            self.dept_list.setStyleSheet("background-color: #1b1e2a; color: #ffffff; border: 1px solid #3a4054; border-radius: 6px;")
             layout.addWidget(self.dept_list)
 
             self.load_criteria_data()
@@ -145,10 +145,10 @@ class CriteriaFormDialog(QDialog):
         # Tombol simpan & batal
         btn_layout = QHBoxLayout()
         btn_save = QPushButton("Simpan")
-        btn_save.setStyleSheet("background-color: #2ecc71; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_save.setStyleSheet("background-color: #2fbf71; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: bold;")
         btn_save.clicked.connect(self.save)
         btn_cancel = QPushButton("Batal")
-        btn_cancel.setStyleSheet("background-color: #95a5a6; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_cancel.setStyleSheet("background-color: #55606f; color: #ffffff; border: none; padding: 9px 16px; border-radius: 8px;")
         btn_cancel.clicked.connect(self.reject)
 
         btn_layout.addStretch()
