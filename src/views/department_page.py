@@ -191,10 +191,10 @@ class DepartmentDetailDialog(QDialog):
         layout.addLayout(header_layout)
 
         # Tabel profil
-        layout.addWidget(QLabel("Kriteria & Bobot:"))
+        layout.addWidget(QLabel("Kriteria Profil:"))
         self.profile_table = QTableWidget()
         self.profile_table.setColumnCount(6)
-        self.profile_table.setHorizontalHeaderLabels(["ID", "Kriteria", "Target", "Bobot", "Tipe", "Aksi"])
+        self.profile_table.setHorizontalHeaderLabels(["ID", "Kriteria", "Target", "Bobot (inf.)", "Tipe", "Aksi"])
         self.profile_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
         self.profile_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.profile_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -337,7 +337,7 @@ class ProfileFormDialog(QDialog):
         self.weight_input.setRange(0, 1)
         self.weight_input.setDecimals(3)
         self.weight_input.setSingleStep(0.05)
-        form.addRow("Bobot (0-1):", self.weight_input)
+        form.addRow("Bobot (informatif):", self.weight_input)
 
         # Aspek
         self.aspect_combo = QComboBox()

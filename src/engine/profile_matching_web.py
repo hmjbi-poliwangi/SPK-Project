@@ -41,7 +41,8 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
     Algoritma:
     1. Ambil semua aspek yang aktif
     2. Untuk setiap aspek, kumpulkan kriteria core & secondary yang terikat pada aspek tersebut
-    3. Hitung Nilai Aspek (gabungan core & secondary) untuk setiap aspek
+    3. Rata-ratakan skor sub-kriteria per faktor (core → NCF, secondary → NSF) tanpa bobot kriteria,
+       lalu gabungkan menjadi Nilai Aspek dengan porsi core_weight (default 0.6) / (1 - core_weight)
     4. Kalikan setiap Nilai Aspek dengan bobot aspeknya
     5. Jumlahkan untuk mendapatkan Ranking Final
     """
@@ -76,13 +77,10 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
 
         core_scores = []
         secondary_scores = []
-        total_weight_core = 0.0
-        total_weight_secondary = 0.0
 
         for profile in profile_list:
             criteria_id = profile['criteria_id']
             target = profile['target_value']
-            weight = profile['weight']
             factor_type = profile['type']
 
             if criteria_id not in scores:
@@ -92,16 +90,16 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
             gap = actual - target
             score = gap_to_score(gap)
 
+            # Bobot kriteria tidak lagi dipakai; semua sub-kriteria dalam satu
+            # faktor diperlakukan setara di dalam rata-rata (NCF/NSF).
             if factor_type == 'core':
-                core_scores.append(score * weight)
-                total_weight_core += weight
+                core_scores.append(score)
             else:
-                secondary_scores.append(score * weight)
-                total_weight_secondary += weight
+                secondary_scores.append(score)
 
-        # Hitung NCF dan NSF untuk aspek ini
-        ncf = sum(core_scores) / total_weight_core if total_weight_core > 0 else 0
-        nsf = sum(secondary_scores) / total_weight_secondary if total_weight_secondary > 0 else 0
+        # Hitung NCF dan NSF untuk aspek ini (rata-rata biasa, tanpa bobot kriteria)
+        ncf = sum(core_scores) / len(core_scores) if core_scores else 0
+        nsf = sum(secondary_scores) / len(secondary_scores) if secondary_scores else 0
 
         # Nilai aspek = gabungan core & secondary
         nilai_aspek = (core_weight * ncf) + ((1 - core_weight) * nsf)
