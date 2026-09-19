@@ -17,7 +17,6 @@
             <th>ID</th>
             <th style="width:auto">Kriteria</th>
             <th>Target</th>
-            <th>Bobot (informatif)</th>
             <th>Tipe</th>
             <th>Aksi</th>
         </tr>
@@ -58,10 +57,6 @@
         <div class="form-group">
             <label for="profile-target">Target Value</label>
             <input type="number" id="profile-target" class="form-input" step="0.5" min="0" max="5" value="0">
-        </div>
-        <div class="form-group">
-            <label for="profile-weight">Bobot (informatif)</label>
-            <input type="number" id="profile-weight" class="form-input" step="0.001" min="0" max="1" value="0.5">
         </div>
         <div class="form-group">
             <label for="profile-aspect">Aspek</label>
@@ -145,7 +140,7 @@ function loadProfiles() {
                 headerRow.className = 'aspect-group-header';
                 const weightText = group.aspect_weight != null ? ` (bobot: ${group.aspect_weight})` : '';
                 headerRow.innerHTML = `
-                    <td colspan="6">
+                    <td colspan="5">
                         📊 ${escapeHtml(group.aspect_name)}${weightText}
                     </td>
                 `;
@@ -164,7 +159,6 @@ function loadProfiles() {
                         <td>${p.id}</td>
                         <td>${escapeHtml(p.criteria_name)}</td>
                         <td>${p.target_value}</td>
-                        <td>${p.weight.toFixed(3)}</td>
                         <td>${typeBadge}${inactiveBadge}</td>
                         <td>
                             <div class="btn-group">
@@ -213,7 +207,6 @@ function openProfileModal() {
     document.getElementById('profile-modal-title').textContent = 'Tambah Profil';
     document.getElementById('profile-edit-id').value = '';
     document.getElementById('profile-target').value = 0;
-    document.getElementById('profile-weight').value = 0.5;
     document.getElementById('profile-aspect').value = '';
     document.querySelector('input[name="profile-type"][value="core"]').checked = true;
     document.getElementById('profile-active-group').style.display = 'none';
@@ -238,7 +231,6 @@ function editProfile(id) {
                 }
             }
             document.getElementById('profile-target').value = p.target_value;
-            document.getElementById('profile-weight').value = p.weight;
             document.querySelector(`input[name="profile-type"][value="${p.type}"]`).checked = true;
             document.getElementById('profile-active').checked = !!p.is_active;
             document.getElementById('profile-active-group').style.display = 'block';
@@ -262,7 +254,6 @@ function saveProfile() {
     const id = document.getElementById('profile-edit-id').value;
     const criteria_id = document.getElementById('profile-criteria').value;
     const target_value = parseFloat(document.getElementById('profile-target').value);
-    const weight = parseFloat(document.getElementById('profile-weight').value);
     const type_ = document.querySelector('input[name="profile-type"]:checked').value;
     const is_active = document.getElementById('profile-active').checked ? 1 : 0;
     const aspect_id = document.getElementById('profile-aspect').value || null;
@@ -277,7 +268,7 @@ function saveProfile() {
         fetch(`/api/profiles/${id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({target_value, weight, type: type_, is_active, aspect_id})
+            body: JSON.stringify({target_value, type: type_, is_active, aspect_id})
         })
         .then(r => r.json())
         .then(res => {
@@ -292,7 +283,7 @@ function saveProfile() {
         fetch(`/api/departments/${DEPT_ID}/profiles`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({criteria_id: parseInt(criteria_id), target_value, weight, type: type_, aspect_id})
+            body: JSON.stringify({criteria_id: parseInt(criteria_id), target_value, type: type_, aspect_id})
         })
         .then(r => r.json())
         .then(res => {

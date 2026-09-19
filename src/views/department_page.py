@@ -193,8 +193,8 @@ class DepartmentDetailDialog(QDialog):
         # Tabel profil
         layout.addWidget(QLabel("Kriteria Profil:"))
         self.profile_table = QTableWidget()
-        self.profile_table.setColumnCount(6)
-        self.profile_table.setHorizontalHeaderLabels(["ID", "Kriteria", "Target", "Bobot (inf.)", "Tipe", "Aksi"])
+        self.profile_table.setColumnCount(5)
+        self.profile_table.setHorizontalHeaderLabels(["ID", "Kriteria", "Target", "Tipe", "Aksi"])
         self.profile_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
         self.profile_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.profile_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -251,11 +251,10 @@ class DepartmentDetailDialog(QDialog):
             self.profile_table.setItem(row, 0, QTableWidgetItem(str(prof["id"])))
             self.profile_table.setItem(row, 1, QTableWidgetItem(prof["criteria_name"]))
             self.profile_table.setItem(row, 2, QTableWidgetItem(str(prof["target_value"])))
-            self.profile_table.setItem(row, 3, QTableWidgetItem(f"{prof['weight']:.2f}"))
             type_display = "Core" if prof["type"] == "core" else "Secondary"
             if not prof["is_active"]:
                 type_display += " (nonaktif)"
-            self.profile_table.setItem(row, 4, QTableWidgetItem(type_display))
+            self.profile_table.setItem(row, 3, QTableWidgetItem(type_display))
 
             # Aksi
             actions_widget = QWidget()
@@ -273,7 +272,7 @@ class DepartmentDetailDialog(QDialog):
 
             actions_layout.addWidget(btn_edit_prof)
             actions_layout.addWidget(btn_del_prof)
-            self.profile_table.setCellWidget(row, 5, actions_widget)
+            self.profile_table.setCellWidget(row, 4, actions_widget)
 
     def add_profile(self):
         dialog = ProfileFormDialog(self, department_id=self.department_id)
@@ -330,14 +329,6 @@ class ProfileFormDialog(QDialog):
         self.target_input.setRange(0, 9999)
         self.target_input.setDecimals(2)
         form.addRow("Target Value:", self.target_input)
-
-        # Weight
-        self.weight_input = QDoubleSpinBox()
-        self.weight_input.setStyleSheet("background-color: #1b1e2a; color: #ffffff; border: 1px solid #3a4054; border-radius: 6px;")
-        self.weight_input.setRange(0, 1)
-        self.weight_input.setDecimals(3)
-        self.weight_input.setSingleStep(0.05)
-        form.addRow("Bobot (informatif):", self.weight_input)
 
         # Aspek
         self.aspect_combo = QComboBox()
@@ -403,7 +394,6 @@ class ProfileFormDialog(QDialog):
                 if index >= 0:
                     self.criteria_combo.setCurrentIndex(index)
                 self.target_input.setValue(row["target_value"])
-                self.weight_input.setValue(row["weight"])
                 if row["type"] == "core":
                     self.radio_core.setChecked(True)
                 else:
@@ -418,19 +408,17 @@ class ProfileFormDialog(QDialog):
     def save(self):
         criteria_id = self.criteria_combo.currentData()
         target = self.target_input.value()
-        weight = self.weight_input.value()
         type_ = "core" if self.radio_core.isChecked() else "secondary"
         is_active = 1 if self.active_check.isChecked() else 0
         aspect_id = self.aspect_combo.currentData()
 
         try:
             if self.profile_id is None:
-                add_department_profile(self.department_id, criteria_id, target, weight, type_, aspect_id=aspect_id)
+                add_department_profile(self.department_id, criteria_id, target, 0.0, type_, aspect_id=aspect_id)
             else:
                 update_department_profile(
                     self.profile_id,
                     target_value=target,
-                    weight=weight,
                     type_=type_,
                     is_active=is_active,
                     aspect_id=aspect_id
