@@ -11,7 +11,7 @@
   <table class="data-table" id="alt-table">
   <thead>
     <tr>
-      <th>ID</th>
+      <th>Nomor</th>
       <th style="width: auto">Nama</th>
       <th style="width: auto">NIM</th>
       <th>Prodi</th>
@@ -89,10 +89,10 @@
       .then((data) => {
         const tbody = document.getElementById("alt-table-body");
         tbody.innerHTML = "";
-        data.forEach((a) => {
+        data.forEach((a, index) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
-                    <td>${a.id}</td>
+                    <td>${index + 1}</td>
                     <td>${escapeHtml(a.name)}</td>
                     <td>${escapeHtml(a.nim)}</td>
                     <td>${escapeHtml(a.prodi || "")}</td>

@@ -162,9 +162,9 @@ def export_report_without_rankings(
     # --- Aspects ---
     if aspects:
         elements.append(Paragraph("A. Daftar Aspek", h2_style))
-        asp_data = [["ID", "Nama Aspek", "Bobot"]]
-        for a in aspects:
-            asp_data.append([str(a.get("id", "-")), a.get("name", "-"), str(a.get("weight", "-"))])
+        asp_data = [["No", "Nama Aspek", "Bobot"]]
+        for i, a in enumerate(aspects, start=1):
+            asp_data.append([str(i), a.get("name", "-"), str(a.get("weight", "-"))])
         t_asp = Table(asp_data, colWidths=[40, 300, 100], repeatRows=1)
         t_asp.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
@@ -221,10 +221,10 @@ def export_report_without_rankings(
 
     # --- Alternatives ---
     elements.append(Paragraph("D. Daftar Alternatif (Kandidat)", h2_style))
-    alt_data = [["ID", "Nama", "NIM", "Prodi", "Kelas"]]
-    for a in alternatives:
+    alt_data = [["No", "Nama", "NIM", "Prodi", "Kelas"]]
+    for i, a in enumerate(alternatives, start=1):
         alt_data.append([
-            str(a.get("id", "-")), a.get("name", "-"),
+            str(i), a.get("name", "-"),
             a.get("nim", "-"), a.get("prodi", "-"),
             a.get("kelas", "-")
         ])
@@ -302,9 +302,9 @@ def export_all_data_to_pdf(
     # --- Aspects ---
     if aspects:
         elements.append(Paragraph("A. Daftar Aspek", h2_style))
-        asp_data = [["ID", "Nama Aspek", "Bobot"]]
-        for a in aspects:
-            asp_data.append([str(a.get("id", "-")), a.get("name", "-"), str(a.get("weight", "-"))])
+        asp_data = [["No", "Nama Aspek", "Bobot"]]
+        for i, a in enumerate(aspects, start=1):
+            asp_data.append([str(i), a.get("name", "-"), str(a.get("weight", "-"))])
         t_asp = Table(asp_data, colWidths=[40, 300, 100], repeatRows=1)
         t_asp.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
@@ -322,9 +322,9 @@ def export_all_data_to_pdf(
 
     # --- Criteria ---
     elements.append(Paragraph("B. Daftar Kriteria", h2_style))
-    crit_data = [["ID", "Nama Kriteria", "Deskripsi"]]
-    for c in criteria:
-        crit_data.append([str(c.get("id", "-")), c.get("name", "-"), c.get("description", "-") or "-"])
+    crit_data = [["No", "Nama Kriteria", "Deskripsi"]]
+    for i, c in enumerate(criteria, start=1):
+        crit_data.append([str(i), c.get("name", "-"), c.get("description", "-") or "-"])
     t1 = Table(crit_data, colWidths=[40, 150, 250], repeatRows=1)
     t1.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
@@ -342,9 +342,9 @@ def export_all_data_to_pdf(
 
     # --- Departments ---
     elements.append(Paragraph("C. Daftar Departemen", h2_style))
-    dept_data = [["ID", "Nama Departemen"]]
-    for d in departments:
-        dept_data.append([str(d.get("id", "-")), d.get("name", "-")])
+    dept_data = [["No", "Nama Departemen"]]
+    for i, d in enumerate(departments, start=1):
+        dept_data.append([str(i), d.get("name", "-")])
     t2 = Table(dept_data, colWidths=[40, 400], repeatRows=1)
     t2.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#ecec13")),
@@ -361,10 +361,10 @@ def export_all_data_to_pdf(
 
     # --- Alternatives ---
     elements.append(Paragraph("D. Daftar Alternatif (Kandidat)", h2_style))
-    alt_data = [["ID", "Nama", "NIM", "Prodi", "Kelas"]]
-    for a in alternatives:
+    alt_data = [["No", "Nama", "NIM", "Prodi", "Kelas"]]
+    for i, a in enumerate(alternatives, start=1):
         alt_data.append([
-            str(a.get("id", "-")), a.get("name", "-"),
+            str(i), a.get("name", "-"),
             a.get("nim", "-"), a.get("prodi", "-"),
             a.get("kelas", "-")
         ])

@@ -31,9 +31,13 @@ function loadScores() {
         const list = document.createElement('div');
         list.className = 'score-list';
 
-        criteriaList.forEach(c => {
+        criteriaList.forEach((c, index) => {
             const item = document.createElement('div');
             item.className = 'score-row';
+
+            const number = document.createElement('span');
+            number.className = 'score-number';
+            number.textContent = (index + 1) + '.';
 
             const label = document.createElement('span');
             label.className = 'score-label';
@@ -48,6 +52,7 @@ function loadScores() {
             input.className = 'score-input';
             input.dataset.criteriaId = c.id;
 
+            item.appendChild(number);
             item.appendChild(label);
             item.appendChild(input);
             container.appendChild(item);
