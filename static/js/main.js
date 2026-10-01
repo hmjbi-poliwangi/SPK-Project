@@ -20,10 +20,11 @@ function escapeHtml(text) {
 function showAlert(message, type) {
   const container = document.getElementById("alert-container");
   const alert = document.createElement("div");
-  alert.className = `alert alert-${type} animate-alert-in`;
+  alert.className = "alert alert-" + type;
   alert.textContent = message;
   container.appendChild(alert);
 
+  // Auto-remove after 3 seconds
   setTimeout(() => {
     alert.style.opacity = "0";
     alert.style.transition = "opacity 0.3s";
@@ -46,8 +47,10 @@ function showSimpleError(technicalError, simpleMessage) {
  */
 function openModal(id) {
   const modal = document.getElementById(id);
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  if (modal) {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 /**
@@ -55,8 +58,10 @@ function openModal(id) {
  */
 function closeModal(id) {
   const modal = document.getElementById(id);
-  modal.classList.remove('open');
-  document.body.style.overflow = '';
+  if (modal) {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
 }
 
 // Close modal when clicking outside the dialog
@@ -87,13 +92,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (mobileMenuBtn && sidebar && overlay) {
     mobileMenuBtn.addEventListener("click", function () {
-      sidebar.classList.toggle("-translate-x-full");
-      overlay.classList.toggle("hidden");
+      sidebar.classList.toggle("open");
+      if (sidebar.classList.contains("open")) {
+        overlay.style.display = "block";
+      } else {
+        overlay.style.display = "none";
+      }
     });
 
     overlay.addEventListener("click", function () {
-      sidebar.classList.add("-translate-x-full");
-      overlay.classList.add("hidden");
+      sidebar.classList.remove("open");
+      overlay.style.display = "none";
     });
   }
 
@@ -123,12 +132,14 @@ document.addEventListener("DOMContentLoaded", function () {
  * Column widths are saved to localStorage so they persist across page refreshes.
  */
 function makeTableResizable(table) {
+  // Build a storage key unique to this page + table
   const storageKey =
     "colwidths_" +
     window.location.pathname.replace(/\//g, "_") +
     "_" +
     (table.id || "tbl");
 
+  // Restore previously saved widths
   const saved = localStorage.getItem(storageKey);
   if (saved) {
     try {
@@ -147,6 +158,7 @@ function makeTableResizable(table) {
 
   const cols = table.querySelectorAll("th");
   cols.forEach((th, idx) => {
+    // Prevent double handles if already applied
     if (th.querySelector(".resize-handle")) return;
 
     const handle = document.createElement("div");
@@ -173,6 +185,7 @@ function makeTableResizable(table) {
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
 
+        // Save all column widths to localStorage
         const allCols = table.querySelectorAll("th");
         const widths = {};
         allCols.forEach((c, i) => {
