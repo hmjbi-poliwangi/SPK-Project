@@ -20,11 +20,10 @@ function escapeHtml(text) {
 function showAlert(message, type) {
   const container = document.getElementById("alert-container");
   const alert = document.createElement("div");
-  alert.className = "alert alert-" + type;
+  alert.className = `alert alert-${type} animate-alert-in`;
   alert.textContent = message;
   container.appendChild(alert);
 
-  // Auto-remove after 3 seconds
   setTimeout(() => {
     alert.style.opacity = "0";
     alert.style.transition = "opacity 0.3s";
@@ -38,28 +37,33 @@ function showAlert(message, type) {
  * @param {string} simpleMessage - Simple message to display (e.g. "Data sudah ada/duplikat!").
  */
 function showSimpleError(technicalError, simpleMessage) {
-    console.error(technicalError);
-    showAlert(simpleMessage || 'Terjadi kesalahan', 'error');
+  console.error(technicalError);
+  showAlert(simpleMessage || 'Terjadi kesalahan', 'error');
 }
 
 /**
  * Open a modal overlay by its id.
  */
 function openModal(id) {
-    document.getElementById(id).classList.add('open');
+  const modal = document.getElementById(id);
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 /**
  * Close a modal overlay by its id.
  */
 function closeModal(id) {
-  document.getElementById(id).classList.remove("open");
+  const modal = document.getElementById(id);
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // Close modal when clicking outside the dialog
 document.addEventListener("click", function (e) {
   if (e.target.classList.contains("modal-overlay")) {
     e.target.classList.remove("open");
+    document.body.style.overflow = '';
   }
 });
 
@@ -68,12 +72,32 @@ document.addEventListener("keydown", function (e) {
   if (e.key === "Escape" || e.key === "Esc" || e.keyCode === 27) {
     document
       .querySelectorAll(".modal-overlay.open")
-      .forEach((m) => m.classList.remove("open"));
+      .forEach((m) => {
+        m.classList.remove("open");
+      });
+    document.body.style.overflow = '';
   }
 });
 
-// Highlight active page in sidebar
+// Mobile menu toggle
 document.addEventListener("DOMContentLoaded", function () {
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+
+  if (mobileMenuBtn && sidebar && overlay) {
+    mobileMenuBtn.addEventListener("click", function () {
+      sidebar.classList.toggle("-translate-x-full");
+      overlay.classList.toggle("hidden");
+    });
+
+    overlay.addEventListener("click", function () {
+      sidebar.classList.add("-translate-x-full");
+      overlay.classList.add("hidden");
+    });
+  }
+
+  // Highlight active page in sidebar
   const path = window.location.pathname;
   const navBtns = document.querySelectorAll(".sidebar .nav-btn");
   navBtns.forEach((btn) => {
@@ -99,14 +123,12 @@ document.addEventListener("DOMContentLoaded", function () {
  * Column widths are saved to localStorage so they persist across page refreshes.
  */
 function makeTableResizable(table) {
-  // Build a storage key unique to this page + table
   const storageKey =
     "colwidths_" +
     window.location.pathname.replace(/\//g, "_") +
     "_" +
     (table.id || "tbl");
 
-  // Restore previously saved widths
   const saved = localStorage.getItem(storageKey);
   if (saved) {
     try {
@@ -125,7 +147,6 @@ function makeTableResizable(table) {
 
   const cols = table.querySelectorAll("th");
   cols.forEach((th, idx) => {
-    // Prevent double handles if already applied
     if (th.querySelector(".resize-handle")) return;
 
     const handle = document.createElement("div");
@@ -152,7 +173,6 @@ function makeTableResizable(table) {
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
 
-        // Save all column widths to localStorage
         const allCols = table.querySelectorAll("th");
         const widths = {};
         allCols.forEach((c, i) => {

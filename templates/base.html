@@ -4,36 +4,100 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SPK Profile Matching</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              bg: '#14161f',
+              'bg-2': '#171a26',
+              surface: '#20222f',
+              'surface-2': '#262a3a',
+              accent: '#f2c94c',
+              muted: '#9aa1b0',
+              success: '#2fbf71',
+              danger: '#e5484d',
+              info: '#3d9bf1',
+              warning: '#f2994a',
+              purple: '#9b59b6',
+            },
+            fontFamily: {
+              sans: ['Inter', 'Segoe UI', 'system-ui', 'sans-serif'],
+            },
+            animation: {
+              'modal-in': 'modalIn 0.25s ease-out',
+              'alert-in': 'alertIn 0.3s ease-out',
+              'fade-in': 'fadeIn 0.2s ease-out',
+              'slide-up': 'slideUp 0.3s ease-out',
+              'scale-in': 'scaleIn 0.2s ease-out',
+            },
+            keyframes: {
+              modalIn: {
+                '0%': { opacity: '0', transform: 'translateY(15px) scale(0.97)' },
+                '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+              },
+              alertIn: {
+                '0%': { opacity: '0', transform: 'translateX(20px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              scaleIn: {
+                '0%': { opacity: '0', transform: 'scale(0.95)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
+              },
+            },
+          }
+        }
+      }
+    </script>
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
-  <body>
-    <div class="app-container">
+  <body class="bg-bg text-white font-sans min-h-screen">
+    <div class="flex min-h-screen">
+      <!-- Mobile Menu Button -->
+      <button id="mobile-menu-btn" class="lg:hidden fixed top-4 left-4 z-50 bg-surface p-2 rounded-lg border border-white/10">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+
       <!-- Sidebar -->
-      <nav class="sidebar">
-        <a href="/" class="brand">
-          <span class="brand-mark">🎯</span>
-          <span class="brand-text">
-            <strong>SPK</strong>
-            <small>Profile Matching</small>
+      <nav id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 lg:w-64 min-w-[236px] bg-gradient-to-b from-[#131722] to-[#1a1d29] border-r border-white/10 flex flex-col p-4 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+        <a href="/" class="flex items-center gap-3 text-white p-3 rounded-xl hover:bg-white/5 transition">
+          <span class="text-2xl w-10 h-10 grid place-items-center bg-accent text-bg rounded-xl shadow-lg">🎯</span>
+          <span class="flex flex-col leading-tight">
+            <strong class="text-base tracking-wide">SPK</strong>
+            <small class="text-xs text-muted">Profile Matching</small>
           </span>
         </a>
 
-        <div class="sidebar-label">Navigation</div>
-        <a href="/" class="nav-btn" data-page="home">🏠 Beranda</a>
-        <a href="/criteria" class="nav-btn" data-page="criteria">📋 Kriteria</a>
-        <a href="/departments" class="nav-btn" data-page="departments">🏢 Departemen</a>
-        <a href="/alternatives" class="nav-btn" data-page="alternatives">👥 Alternatif</a>
-        <a href="/aspects" class="nav-btn" data-page="aspects">📊 Aspek</a>
+        <div class="text-[10.5px] uppercase tracking-wider text-gray-500 px-3 pt-4 pb-1">Navigation</div>
+        <a href="/" class="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2.5 rounded-lg text-sm font-medium transition" data-page="home">🏠 Beranda</a>
+        <a href="/criteria" class="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2.5 rounded-lg text-sm font-medium transition" data-page="criteria">📋 Kriteria</a>
+        <a href="/departments" class="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2.5 rounded-lg text-sm font-medium transition" data-page="departments">🏢 Departemen</a>
+        <a href="/alternatives" class="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2.5 rounded-lg text-sm font-medium transition" data-page="alternatives">👥 Alternatif</a>
+        <a href="/aspects" class="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2.5 rounded-lg text-sm font-medium transition" data-page="aspects">📊 Aspek</a>
 
-        <div class="sidebar-label">Tools</div>
-        <a href="/import-export" class="nav-btn" data-page="import-export">📦 Import / Export</a>
+        <div class="text-[10.5px] uppercase tracking-wider text-gray-500 px-3 pt-4 pb-1">Tools</div>
+        <a href="/import-export" class="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2.5 rounded-lg text-sm font-medium transition" data-page="import-export">📦 Import / Export</a>
 
-        <div class="sidebar-footer">SPK Profile Matching · v1</div>
+        <div class="mt-auto text-[10.5px] text-gray-600 text-center p-2 tracking-wide">SPK Profile Matching · v1</div>
       </nav>
 
+      <!-- Overlay for mobile -->
+      <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
       <!-- Content -->
-      <main class="content">
-        <div id="alert-container"></div>
+      <main class="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <div id="alert-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
         {% block content %}{% endblock %}
       </main>
     </div>
