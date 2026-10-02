@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="header-info">
-    <h1 class="page-title" style="margin-bottom:0;"><svg class="w-5 h-5 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>{{ department.name }}</h1>
+    <h1 class="page-title" style="margin-bottom:0;"><svg class="w-6 h-6 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>{{ department.name }}</h1>
     <div class="btn-group">
         <a href="/departments" class="btn btn-gray btn-sm">← Kembali</a>
         <button class="btn btn-blue btn-sm" onclick="renameDepartment()">Ubah Nama</button>

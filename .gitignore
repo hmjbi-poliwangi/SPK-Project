@@ -17,3 +17,4 @@ data/*.db
 test/
 
 DEPLOY_GUIDE.md
+AGENTS.md
