@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="page-title">📦 Import / Export Data</h1>
+<h1 class="page-title"><svg class="w-6 h-6 inline-block mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>Import / Export Data</h1>
 
 <div class="ie-container">
     <!-- IMPORT SECTION -->
     <div class="ie-card">
-        <h2 class="ie-card-title">📥 Import Data (JSON)</h2>
+        <h2 class="ie-card-title"><svg class="w-5 h-5 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Import Data (JSON)</h2>
         <p class="ie-card-desc">Upload file JSON untuk mengimport data ke aplikasi.</p>
         <div class="form-group">
             <label for="import-file" class="form-label">Pilih file JSON:</label>
@@ -15,41 +15,45 @@
             <p class="text-muted">Belum ada file dipilih.</p>
         </div>
         <button class="btn btn-green" onclick="importJSON()" id="btn-import" disabled>
-            📥 Import Data
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Import Data
         </button>
         <div id="import-status" class="ie-status"></div>
     </div>
 
     <!-- EXPORT SECTION -->
     <div class="ie-card">
-        <h2 class="ie-card-title">📤 Export Data</h2>
+        <h2 class="ie-card-title"><svg class="w-5 h-5 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export Data</h2>
         <p class="ie-card-desc">Download data aplikasi dalam berbagai format.</p>
 
         <div class="ie-export-group">
-            <h3 class="ie-subtitle">📄 Export JSON</h3>
+            <h3 class="ie-subtitle"><svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Export JSON</h3>
             <p class="ie-desc">Seluruh data dalam satu file JSON.</p>
             <button class="btn btn-blue" onclick="exportJSON()">
-                ⬇ Download JSON
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download JSON
             </button>
         </div>
 
         <hr class="ie-divider">
 
         <div class="ie-export-group">
-            <h3 class="ie-subtitle">📑 Export PDF - Laporan Data</h3>
+            <h3 class="ie-subtitle"><svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Export PDF - Laporan Data</h3>
             <p class="ie-desc">Laporan lengkap berisi data kriteria, departemen, profil, dan alternatif. <strong>Tanpa perangkingan.</strong></p>
             <button class="btn btn-purple" onclick="exportPDFReport()">
-                ⬇ Download PDF (Laporan Data)
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download PDF (Laporan Data)
             </button>
         </div>
 
         <hr class="ie-divider">
 
         <div class="ie-export-group">
-            <h3 class="ie-subtitle">🏆 Export PDF - Perangkingan</h3>
+            <h3 class="ie-subtitle"><svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 21h8m-4-4v4m-6-17h12v4a6 6 0 01-12 0V4zM6 6H4a2 2 0 00-2 2v1a4 4 0 004 4m12-7h2a2 2 0 012 2v1a4 4 0 01-4 4"/></svg>Export PDF - Perangkingan</h3>
             <p class="ie-desc">Download file ZIP berisi PDF perangkingan masing-masing departemen (satu departemen satu PDF).</p>
             <button class="btn btn-orange" onclick="exportRankingsAll()">
-                ⬇ Download ZIP (Semua Ranking)
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download ZIP (Semua Ranking)
             </button>
         </div>
 
@@ -65,7 +69,7 @@
 // ============================================================
 function exportJSON() {
     const status = document.getElementById('export-status');
-    status.innerHTML = '<span class="text-info">⏳ Memproses export JSON...</span>';
+    status.innerHTML = '<span class="text-info flex items-center gap-1"><svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Memproses export JSON...</span>';
 
     fetch('/api/export/json')
         .then(r => {
@@ -81,11 +85,11 @@ function exportJSON() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            status.innerHTML = '<span class="text-success">✅ Export JSON berhasil!</span>';
+            status.innerHTML = '<span class="text-success flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Export JSON berhasil!</span>';
         })
         .catch(err => {
             console.error(err);
-            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
+            status.innerHTML = '<span class="text-error flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Export gagal</span>';
         });
 }
 
@@ -94,7 +98,7 @@ function exportJSON() {
 // ============================================================
 function exportPDFReport() {
     const status = document.getElementById('export-status');
-    status.innerHTML = '<span class="text-info">⏳ Memproses export PDF laporan data...</span>';
+    status.innerHTML = '<span class="text-info flex items-center gap-1"><svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Memproses export PDF laporan data...</span>';
 
     fetch('/api/export/pdf-report')
         .then(r => {
@@ -110,11 +114,11 @@ function exportPDFReport() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            status.innerHTML = '<span class="text-success">✅ Export PDF laporan data berhasil!</span>';
+            status.innerHTML = '<span class="text-success flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Export PDF laporan data berhasil!</span>';
         })
         .catch(err => {
             console.error(err);
-            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
+            status.innerHTML = '<span class="text-error flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Export gagal</span>';
         });
 }
 
@@ -123,7 +127,7 @@ function exportPDFReport() {
 // ============================================================
 function exportRankingsAll() {
     const status = document.getElementById('export-status');
-    status.innerHTML = '<span class="text-info">⏳ Memproses export semua ranking...</span>';
+    status.innerHTML = '<span class="text-info flex items-center gap-1"><svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Memproses export semua ranking...</span>';
 
     fetch('/api/export/rankings-all')
         .then(r => {
@@ -139,11 +143,11 @@ function exportRankingsAll() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            status.innerHTML = '<span class="text-success">✅ Export semua ranking berhasil! (File ZIP)</span>';
+            status.innerHTML = '<span class="text-success flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Export semua ranking berhasil! (File ZIP)</span>';
         })
         .catch(err => {
             console.error(err);
-            status.innerHTML = '<span class="text-error">❌ Export gagal</span>';
+            status.innerHTML = '<span class="text-error flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Export gagal</span>';
         });
 }
 
@@ -184,7 +188,7 @@ function importJSON() {
         return;
     }
 
-    status.innerHTML = '<span class="text-info">⏳ Mengimport data...</span>';
+    status.innerHTML = '<span class="text-info flex items-center gap-1"><svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Mengimport data...</span>';
 
     const reader = new FileReader();
     reader.onload = function(ev) {
@@ -200,9 +204,9 @@ function importJSON() {
             .then(res => {
                 if (res.error) {
                     console.error(res.error);
-                    status.innerHTML = '<span class="text-error">❌ Data tidak valid atau sudah ada</span>';
+                    status.innerHTML = '<span class="text-error flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Data tidak valid atau sudah ada</span>';
                 } else {
-                    status.innerHTML = '<span class="text-success">✅ Import berhasil! ' +
+                    status.innerHTML = '<span class="text-success flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Import berhasil! ' +
                         'Aspek: ' + (res.detail.aspects || 0) + ', ' +
                         'Kriteria: ' + res.detail.criteria + ', ' +
                         'Departemen: ' + res.detail.departments + ', ' +
@@ -214,12 +218,12 @@ function importJSON() {
             })
             .catch(err => {
                 console.error(err);
-                status.innerHTML = '<span class="text-error">❌ Import gagal</span>';
+                status.innerHTML = '<span class="text-error flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Import gagal</span>';
             });
 
         } catch (e) {
             console.error(e);
-            status.innerHTML = '<span class="text-error">❌ File JSON tidak valid</span>';
+            status.innerHTML = '<span class="text-error flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>File JSON tidak valid</span>';
         }
     };
     reader.readAsText(file);

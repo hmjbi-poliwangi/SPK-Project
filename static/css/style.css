@@ -193,7 +193,6 @@ body {
 .data-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.028); }
 .data-table tbody tr:hover td { background: rgba(124, 92, 255, 0.07); }
 .data-table a.link-brand { color: var(--accent); text-decoration: none; font-weight: 600; }
-.data-table a.link-brand:hover { text-decoration: underline; }
 
 .aspect-group-header td {
   background: linear-gradient(135deg, rgba(242, 201, 76, 0.14), rgba(124, 92, 255, 0.10));
