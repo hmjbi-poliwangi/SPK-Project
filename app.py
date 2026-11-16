@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import zipfile
 from io import BytesIO
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from src.models.supabase_db import (
     create_tables,
     get_all_aspects, create_aspect, update_aspect, delete_aspect, get_aspect_by_id,
@@ -15,32 +15,126 @@ from src.models.supabase_db import (
     get_department_profiles, add_department_profile, update_department_profile, delete_department_profile,
     get_all_alternatives, create_alternative, update_alternative, delete_alternative, get_alternative_by_id,
     get_alternative_scores, set_alternative_score,
-    clear_department_rankings, clear_all_rankings
+    clear_department_rankings, clear_all_rankings,
+    create_user, get_user_by_username, get_all_users, update_user, delete_user
 )
 from src.engine.profile_matching_web import rank_alternatives
 from src.utils.io_utils import export_to_json, import_from_json, validate_import_data
 from src.utils.pdf_export import export_rankings_to_pdf, export_report_without_rankings, export_all_data_to_pdf
+from src.utils.auth import (
+    login_required, developer_required, get_current_user, is_logged_in,
+    can_access_department, can_modify_department, role_required
+)
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'default-secret-key-change-in-production')
+
 
 # ============================================================
-# ROUTES: Halaman
+# Helper: Error Handling
+# ============================================================
+
+def get_user_friendly_error(e):
+    """Konversi error teknis ke pesan yang user-friendly."""
+    error_str = str(e).lower()
+
+    if any(kw in error_str for kw in ['getaddrinfo', 'connection', 'timeout', 'unreachable', 'refused', 'failed to fetch', 'network']):
+        return 'Tidak dapat terhubung ke server. Periksa koneksi internet.'
+
+    if 'invalid' in error_str or 'unauthorized' in error_str:
+        return 'Username atau password salah'
+
+    if 'duplicate' in error_str or 'unique' in error_str or 'sudah ada' in error_str:
+        return 'Data sudah ada/duplikat'
+
+    return 'Terjadi kesalahan. Coba lagi nanti.'
+
+
+# ============================================================
+# ROUTES: Auth
+# ============================================================
+
+@app.route('/login', methods=['GET'])
+def login_page():
+    if is_logged_in():
+        return redirect(url_for('home'))
+    return render_template('login.html')
+
+
+@app.route('/login', methods=['POST'])
+def login_post():
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+
+        if not username or not password:
+            return jsonify({'error': 'Username dan password harus diisi'}), 400
+
+        user = get_user_by_username(username)
+        if not user or not check_password_hash(user['password_hash'], password):
+            return jsonify({'error': 'Username atau password salah'}), 401
+
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        session['role'] = user['role']
+        session['department_id'] = user.get('department_id')
+
+        return jsonify({'message': 'Login berhasil', 'redirect': '/'})
+    except Exception as e:
+        console_error = str(e)
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
+
+@app.route('/api/auth/status')
+def auth_status():
+    user = get_current_user()
+    if user:
+        return jsonify({
+            'logged_in': True,
+            'user_id': user['id'],
+            'username': user['username'],
+            'role': user['role'],
+            'department_id': user.get('department_id'),
+        })
+    return jsonify({'logged_in': False})
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login_page'))
+
+
+# ============================================================
+# ROUTES: Halaman (Butuh Login)
 # ============================================================
 
 @app.route('/')
+@login_required
 def home():
-    return render_template('home.html')
+    return render_template('home.html', current_user=get_current_user())
 
 @app.route('/criteria')
+@role_required(('developer', 'kahim', 'co'))
 def criteria_page():
     return render_template('criteria.html')
 
 @app.route('/departments')
+@login_required
 def departments_page():
+    role = session.get('role')
+    dept_id = session.get('department_id')
+    if role in ('co', 'anggota') and dept_id:
+        return redirect(url_for('department_detail_page', dept_id=dept_id))
     return render_template('departments.html')
 
 @app.route('/departments/<int:dept_id>')
+@login_required
 def department_detail_page(dept_id):
+    if not can_access_department(dept_id):
+        return render_template('404.html'), 404
     try:
         dept = get_department_by_id(dept_id)
         return render_template('department_detail.html', department=dept)
@@ -48,10 +142,12 @@ def department_detail_page(dept_id):
         return render_template('404.html'), 404
 
 @app.route('/alternatives')
+@role_required(('developer', 'kahim', 'co'))
 def alternatives_page():
     return render_template('alternatives.html')
 
 @app.route('/alternatives/<int:alt_id>/scores')
+@role_required(('developer', 'kahim', 'co'))
 def alternative_scores_page(alt_id):
     try:
         alt = get_alternative_by_id(alt_id)
@@ -60,12 +156,99 @@ def alternative_scores_page(alt_id):
         return render_template('404.html'), 404
 
 @app.route('/aspects')
+@role_required(('developer', 'kahim', 'co'))
 def aspects_page():
     return render_template('aspects.html')
 
 @app.route('/import-export')
+@role_required(('developer', 'kahim'))
 def import_export_page():
     return render_template('import_export.html')
+
+
+# ============================================================
+# ROUTES: Manajemen User (Developer Only)
+# ============================================================
+
+@app.route('/users')
+@developer_required
+def users_page():
+    return render_template('users.html')
+
+
+# ============================================================
+# API: Users (Developer Only)
+# ============================================================
+
+@app.route('/api/users', methods=['GET'])
+@developer_required
+def api_get_users():
+    try:
+        users = get_all_users()
+        return jsonify(users)
+    except Exception as e:
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
+
+@app.route('/api/users', methods=['POST'])
+@developer_required
+def api_create_user():
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        role = data.get('role', 'anggota')
+        department_id = data.get('department_id')
+
+        if not username or not password:
+            return jsonify({'error': 'Username dan password harus diisi'}), 400
+        if role not in ('developer', 'kahim', 'co', 'anggota'):
+            return jsonify({'error': 'Role tidak valid'}), 400
+        if role in ('co', 'anggota') and not department_id:
+            return jsonify({'error': 'Departemen harus diisi untuk role co atau anggota'}), 400
+
+        password_hash = generate_password_hash(password)
+        user_id = create_user(username, password_hash, role, department_id)
+        return jsonify({'id': user_id, 'message': 'User berhasil ditambahkan'}), 201
+    except ValueError as e:
+        return jsonify({'error': get_user_friendly_error(e)}), 400
+    except Exception as e:
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
+
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@developer_required
+def api_update_user(user_id):
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip() or None
+        password = data.get('password', '')
+        role = data.get('role')
+        department_id = data.get('department_id')
+
+        if role and role not in ('developer', 'kahim', 'co', 'anggota'):
+            return jsonify({'error': 'Role tidak valid'}), 400
+        if role in ('co', 'anggota') and not department_id:
+            return jsonify({'error': 'Departemen harus diisi untuk role co atau anggota'}), 400
+
+        password_hash = generate_password_hash(password) if password else None
+        update_user(user_id, username=username, password_hash=password_hash, role=role, department_id=department_id)
+        return jsonify({'message': 'User berhasil diupdate'})
+    except ValueError as e:
+        return jsonify({'error': get_user_friendly_error(e)}), 400
+    except Exception as e:
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@developer_required
+def api_delete_user(user_id):
+    try:
+        delete_user(user_id)
+        return jsonify({'message': 'User berhasil dihapus'})
+    except Exception as e:
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 # ============================================================
 # API: Criteria
@@ -77,7 +260,7 @@ def api_get_criteria():
         criteria_list = get_all_criteria()
         return jsonify(criteria_list)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 @app.route('/api/criteria/<int:criteria_id>', methods=['GET'])
 def api_get_criteria_by_id(criteria_id):
@@ -85,11 +268,11 @@ def api_get_criteria_by_id(criteria_id):
         crit = get_criteria_by_id(criteria_id)
         return jsonify(crit)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({'error': get_user_friendly_error(e)}), 404
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 @app.route('/api/criteria', methods=['POST'])
+@developer_required
 def api_create_criteria():
     try:
         data = request.get_json()
@@ -101,11 +284,13 @@ def api_create_criteria():
         clear_all_rankings()
         return jsonify({'id': crit_id, 'message': 'Kriteria berhasil ditambahkan'}), 201
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/criteria/<int:criteria_id>', methods=['PUT'])
+@developer_required
 def api_update_criteria(criteria_id):
     try:
         data = request.get_json()
@@ -117,19 +302,20 @@ def api_update_criteria(criteria_id):
         clear_all_rankings()
         return jsonify({'message': 'Kriteria berhasil diupdate'})
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/criteria/<int:criteria_id>', methods=['DELETE'])
+@developer_required
 def api_delete_criteria(criteria_id):
     try:
         delete_criteria(criteria_id)
         clear_all_rankings()
         return jsonify({'message': 'Kriteria berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 # ============================================================
 # API: Departments
 # ============================================================
@@ -142,7 +328,7 @@ def api_get_departments():
             dept['active_profiles'] = 0
         return jsonify(departments)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 @app.route('/api/departments/<int:dept_id>', methods=['GET'])
 def api_get_department(dept_id):
@@ -150,11 +336,11 @@ def api_get_department(dept_id):
         dept = get_department_by_id(dept_id)
         return jsonify(dept)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({'error': get_user_friendly_error(e)}), 404
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 @app.route('/api/departments', methods=['POST'])
+@developer_required
 def api_create_department():
     try:
         data = request.get_json()
@@ -165,11 +351,13 @@ def api_create_department():
         clear_all_rankings()
         return jsonify({'id': dept_id, 'message': 'Departemen berhasil ditambahkan'}), 201
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/departments/<int:dept_id>', methods=['PUT'])
+@developer_required
 def api_update_department(dept_id):
     try:
         data = request.get_json()
@@ -180,19 +368,20 @@ def api_update_department(dept_id):
         clear_all_rankings()
         return jsonify({'message': 'Departemen berhasil diupdate'})
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/departments/<int:dept_id>', methods=['DELETE'])
+@developer_required
 def api_delete_department(dept_id):
     try:
         delete_department(dept_id)
         clear_all_rankings()
         return jsonify({'message': 'Departemen berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 # ============================================================
 # API: Aspects
 # ============================================================
@@ -203,7 +392,7 @@ def api_get_aspects():
         aspects = get_all_aspects()
         return jsonify(aspects)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 @app.route('/api/aspects/<int:aspect_id>', methods=['GET'])
 def api_get_aspect(aspect_id):
@@ -211,11 +400,11 @@ def api_get_aspect(aspect_id):
         asp = get_aspect_by_id(aspect_id)
         return jsonify(asp)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({'error': get_user_friendly_error(e)}), 404
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 @app.route('/api/aspects', methods=['POST'])
+@developer_required
 def api_create_aspect():
     try:
         data = request.get_json()
@@ -227,11 +416,13 @@ def api_create_aspect():
         clear_all_rankings()
         return jsonify({'id': asp_id, 'message': 'Aspek berhasil ditambahkan'}), 201
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/aspects/<int:aspect_id>', methods=['PUT'])
+@developer_required
 def api_update_aspect(aspect_id):
     try:
         data = request.get_json()
@@ -243,19 +434,20 @@ def api_update_aspect(aspect_id):
         clear_all_rankings()
         return jsonify({'message': 'Aspek berhasil diupdate'})
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/aspects/<int:aspect_id>', methods=['DELETE'])
+@developer_required
 def api_delete_aspect(aspect_id):
     try:
         delete_aspect(aspect_id)
         clear_all_rankings()
         return jsonify({'message': 'Aspek berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 # ============================================================
 # API: Department Profiles
 # ============================================================
@@ -266,10 +458,12 @@ def api_get_profiles(dept_id):
         profiles = get_department_profiles(dept_id)
         return jsonify(profiles)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 @app.route('/api/departments/<int:dept_id>/profiles', methods=['POST'])
+@role_required(('developer', 'co'))
 def api_add_profile(dept_id):
+    if not can_modify_department(dept_id):
+        return jsonify({'error': 'Forbidden'}), 403
     try:
         data = request.get_json()
         criteria_id = data.get('criteria_id')
@@ -285,11 +479,13 @@ def api_add_profile(dept_id):
         clear_all_rankings()
         return jsonify({'id': profile_id, 'message': 'Profil berhasil ditambahkan'}), 201
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/profiles/<int:profile_id>', methods=['PUT'])
+@role_required(('developer', 'co'))
 def api_update_profile(profile_id):
     try:
         data = request.get_json()
@@ -304,19 +500,20 @@ def api_update_profile(profile_id):
         clear_all_rankings()
         return jsonify({'message': 'Profil berhasil diupdate'})
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/profiles/<int:profile_id>', methods=['DELETE'])
+@role_required(('developer', 'co'))
 def api_delete_profile(profile_id):
     try:
         delete_department_profile(profile_id)
         clear_all_rankings()
         return jsonify({'message': 'Profil berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 # ============================================================
 # API: Ranking
 # ============================================================
@@ -341,7 +538,7 @@ def api_get_alternatives():
         alts = get_all_alternatives()
         return jsonify(alts)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 @app.route('/api/alternatives/<int:alt_id>', methods=['GET'])
 def api_get_alternative(alt_id):
@@ -349,11 +546,11 @@ def api_get_alternative(alt_id):
         alt = get_alternative_by_id(alt_id)
         return jsonify(alt)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({'error': get_user_friendly_error(e)}), 404
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 @app.route('/api/alternatives', methods=['POST'])
+@developer_required
 def api_create_alternative():
     try:
         data = request.get_json()
@@ -370,11 +567,13 @@ def api_create_alternative():
         clear_all_rankings()
         return jsonify({'id': alt_id, 'message': 'Alternatif berhasil ditambahkan'}), 201
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/alternatives/<int:alt_id>', methods=['PUT'])
+@developer_required
 def api_update_alternative(alt_id):
     try:
         data = request.get_json()
@@ -391,19 +590,20 @@ def api_update_alternative(alt_id):
         clear_all_rankings()
         return jsonify({'message': 'Alternatif berhasil diupdate'})
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': get_user_friendly_error(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
+
 
 @app.route('/api/alternatives/<int:alt_id>', methods=['DELETE'])
+@developer_required
 def api_delete_alternative(alt_id):
     try:
         delete_alternative(alt_id)
         clear_all_rankings()
         return jsonify({'message': 'Alternatif berhasil dihapus'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 # ============================================================
 # API: Alternative Scores
 # ============================================================
@@ -414,9 +614,10 @@ def api_get_scores(alt_id):
         scores = get_alternative_scores(alt_id)
         return jsonify(scores)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 @app.route('/api/alternatives/<int:alt_id>/scores', methods=['POST'])
+@role_required(('developer', 'co'))
 def api_save_scores(alt_id):
     try:
         data = request.get_json()
@@ -426,7 +627,7 @@ def api_save_scores(alt_id):
         clear_all_rankings()
         return jsonify({'message': 'Nilai berhasil disimpan'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 # ============================================================
 # API: Export / Import Data
@@ -488,6 +689,7 @@ def _get_rankings_per_department():
 
 
 @app.route('/api/export/json', methods=['GET'])
+@role_required(('developer', 'kahim'))
 def api_export_json():
     """Export seluruh data ke format JSON."""
     try:
@@ -509,10 +711,11 @@ def api_export_json():
         response.headers['Content-Disposition'] = 'attachment; filename=spk_export.json'
         return response
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 
 @app.route('/api/export/pdf', methods=['GET'])
+@role_required(('developer', 'kahim'))
 def api_export_pdf():
     """Export laporan lengkap ke PDF."""
     try:
@@ -533,10 +736,11 @@ def api_export_pdf():
         response.headers['Content-Disposition'] = 'attachment; filename=spk_laporan.pdf'
         return response
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 
 @app.route('/api/export/department/<int:dept_id>/pdf', methods=['GET'])
+@role_required(('developer', 'kahim', 'co'))
 def api_export_department_pdf(dept_id):
     """Export ranking satu departemen ke PDF."""
     try:
@@ -556,10 +760,11 @@ def api_export_department_pdf(dept_id):
         response.headers['Content-Disposition'] = f'attachment; filename=ranking_{dept["name"]}.pdf'
         return response
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 
 @app.route('/api/export/pdf-report', methods=['GET'])
+@role_required(('developer', 'kahim'))
 def api_export_pdf_report():
     """Export laporan lengkap TANPA perangkingan."""
     try:
@@ -578,10 +783,11 @@ def api_export_pdf_report():
         response.headers['Content-Disposition'] = 'attachment; filename=spk_laporan_data.pdf'
         return response
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 
 @app.route('/api/export/rankings-all', methods=['GET'])
+@role_required(('developer', 'kahim'))
 def api_export_rankings_all():
     """Export semua ranking per departemen ke ZIP berisi PDF masing-masing."""
     try:
@@ -612,10 +818,11 @@ def api_export_rankings_all():
             download_name='semua_ranking.zip'
         )
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 
 @app.route('/api/import/json', methods=['POST'])
+@role_required(('developer', 'kahim'))
 def api_import_json():
     """Import data dari file JSON."""
     try:
@@ -702,7 +909,7 @@ def api_import_json():
         }}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': get_user_friendly_error(e)}), 500
 
 
 # ============================================================

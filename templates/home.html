@@ -8,14 +8,34 @@
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
             Buka Departemen
         </a>
-        <a href="/alternatives" class="btn btn-blue no-underline">
+        <a href="/alternatives" class="btn btn-blue no-underline" id="home-btn-alternatives" style="display: none;">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             Buka Alternatif
         </a>
-        <a href="/import-export" class="btn btn-purple no-underline">
+        <a href="/import-export" class="btn btn-purple no-underline" id="home-btn-import" style="display: none;">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             Import / Export
         </a>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/auth/status')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.logged_in) return;
+            const role = data.role;
+            if (role === 'developer' || role === 'kahim' || role === 'co') {
+                document.getElementById('home-btn-alternatives').style.display = 'inline-flex';
+            }
+            if (role === 'developer' || role === 'kahim') {
+                document.getElementById('home-btn-import').style.display = 'inline-flex';
+            }
+        })
+        .catch(() => {});
+});
+</script>
 {% endblock %}

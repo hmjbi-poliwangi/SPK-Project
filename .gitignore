@@ -18,3 +18,8 @@ test/
 
 DEPLOY_GUIDE.md
 AGENTS.md
+
+.opencode/
+
+# Script setup lokal
+create_developer.py

@@ -1,3 +1,4 @@
+import json
 from ..models.supabase_db import (
     get_active_profiles,
     get_alternative_scores,
@@ -5,7 +6,8 @@ from ..models.supabase_db import (
     get_cached_ranking,
     clear_department_rankings,
     save_department_ranking,
-    get_all_aspects
+    get_all_aspects,
+    get_department_by_id
 )
 
 
@@ -34,17 +36,22 @@ def gap_to_score(gap):
         return 0
 
 
+def _is_registered_in_department(alt, target_dept_name):
+    """Cek apakah nama departemen target ada di additional_info['departments']."""
+    raw_info = alt.get('additional_info')
+    if not raw_info:
+        return False
+    try:
+        info = json.loads(raw_info) if isinstance(raw_info, str) else raw_info
+        chosen_depts = info.get('departments', [])
+        return target_dept_name in chosen_depts
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
 def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
     """
     Hitung skor alternatif berdasarkan metode Profile Matching dengan Aspek.
-    
-    Algoritma:
-    1. Ambil semua aspek yang aktif
-    2. Untuk setiap aspek, kumpulkan kriteria core & secondary yang terikat pada aspek tersebut
-    3. Rata-ratakan skor sub-kriteria per faktor (core → NCF, secondary → NSF) tanpa bobot kriteria,
-       lalu gabungkan menjadi Nilai Aspek dengan porsi core_weight (default 0.6) / (1 - core_weight)
-    4. Kalikan setiap Nilai Aspek dengan bobot aspeknya
-    5. Jumlahkan untuk mendapatkan Ranking Final
     """
     try:
         profiles = get_active_profiles(department_id)
@@ -58,7 +65,6 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
     except Exception:
         return None
 
-    # Kelompokkan profiles berdasarkan aspect_id
     profiles_by_aspect = {}
     for profile in profiles:
         aid = profile.get('aspect_id')
@@ -69,7 +75,6 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
     aspect_scores = []
 
     for aspect_id, profile_list in profiles_by_aspect.items():
-        # Bobot untuk aspek ini
         if aspect_id is not None and aspect_id in aspect_map:
             aspect_weight = aspect_map[aspect_id]['weight']
         else:
@@ -83,25 +88,18 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
             target = profile['target_value']
             factor_type = profile['type']
 
-            if criteria_id not in scores:
-                continue
-
-            actual = scores[criteria_id]
+            actual = scores.get(criteria_id, 0)
             gap = actual - target
             score = gap_to_score(gap)
 
-            # Bobot kriteria tidak lagi dipakai; semua sub-kriteria dalam satu
-            # faktor diperlakukan setara di dalam rata-rata (NCF/NSF).
             if factor_type == 'core':
                 core_scores.append(score)
             else:
                 secondary_scores.append(score)
 
-        # Hitung NCF dan NSF untuk aspek ini (rata-rata biasa, tanpa bobot kriteria)
         ncf = sum(core_scores) / len(core_scores) if core_scores else 0
         nsf = sum(secondary_scores) / len(secondary_scores) if secondary_scores else 0
 
-        # Nilai aspek = gabungan core & secondary
         nilai_aspek = (core_weight * ncf) + ((1 - core_weight) * nsf)
 
         aspect_scores.append({
@@ -115,7 +113,6 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
     if not aspect_scores:
         return None
 
-    # Ranking final: total tertimbang dari semua nilai aspek
     total_tertimbang = sum(a['nilai_aspek'] * a['aspect_weight'] for a in aspect_scores)
     total_bobot = sum(a['aspect_weight'] for a in aspect_scores)
     total = total_tertimbang / total_bobot if total_bobot > 0 else 0
@@ -137,10 +134,17 @@ def rank_alternatives(department_id, core_weight=0.6):
                 'total': r['total']
             } for r in cached]
 
-        # Hitung ulang
+        dept = get_department_by_id(department_id)
+        if not dept:
+            return []
+        target_dept_name = dept['name']
+
         alts = get_all_alternatives()
         results = []
         for alt in alts:
+            if not _is_registered_in_department(alt, target_dept_name):
+                continue
+
             try:
                 res = calculate_alternative_score(alt['id'], department_id, core_weight)
                 if res:
@@ -152,13 +156,12 @@ def rank_alternatives(department_id, core_weight=0.6):
                     })
             except Exception:
                 continue
+
         results.sort(key=lambda x: x['total'], reverse=True)
 
-        # Simpan ke cache (hapus dulu sebelumnya)
         clear_department_rankings(department_id)
         save_department_ranking(department_id, results)
 
-        # Kembalikan format yang konsisten
         return [{
             'id': r['alternative_id'],
             'name': r['name'],

@@ -48,27 +48,32 @@
 // ============================================================
 
 function loadAspects() {
-    fetch('/api/aspects')
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById('aspect-table-body');
-            tbody.innerHTML = '';
-            data.forEach((a, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
+    Promise.all([
+        fetch('/api/aspects').then(r => r.json()),
+        fetch('/api/auth/status').then(r => r.json())
+    ]).then(([data, auth]) => {
+        const role = auth.role;
+        const canModify = role === 'developer';
+        const tbody = document.getElementById('aspect-table-body');
+        tbody.innerHTML = '';
+        data.forEach((a, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${escapeHtml(a.name)}</td>
                     <td>${a.weight}</td>
                     <td>
                         <div class="btn-group">
-                            <button class="btn btn-blue btn-sm" onclick="editAspect(${a.id}, '${escapeHtml(a.name)}', ${a.weight})">Edit</button>
-                            <button class="btn btn-red btn-sm" onclick="deleteAspect(${a.id})">Hapus</button>
+                            ${canModify ? `<button class="btn btn-blue btn-sm" onclick="editAspect(${a.id}, '${escapeHtml(a.name)}', ${a.weight})">Edit</button>` : ''}
+                            ${canModify ? `<button class="btn btn-red btn-sm" onclick="deleteAspect(${a.id})">Hapus</button>` : ''}
                         </div>
                     </td>
                 `;
-                tbody.appendChild(tr);
-            });
+            tbody.appendChild(tr);
         });
+        const addBtn = document.querySelector('.toolbar .btn-yellow');
+        if (addBtn) addBtn.style.display = canModify ? 'inline-flex' : 'none';
+    });
 }
 
 function openAspectModal() {

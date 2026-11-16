@@ -40,6 +40,7 @@ ALTER TABLE IF EXISTS department_profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS alternatives DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS alternative_scores DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS department_rankings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
 
 -- 2. Buat tabel aspects (baru)
 CREATE TABLE IF NOT EXISTS aspects (
@@ -100,6 +101,16 @@ CREATE TABLE IF NOT EXISTS department_rankings (
     alternative_id INTEGER NOT NULL REFERENCES alternatives(id) ON DELETE CASCADE,
     total DOUBLE PRECISION NOT NULL,
     UNIQUE(department_id, alternative_id)
+);
+
+-- Tabel users (untuk autentikasi)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'anggota' CHECK(role IN ('developer', 'kahim', 'co', 'anggota')),
+    department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Indexes
@@ -530,3 +541,78 @@ def get_cached_ranking(department_id: int) -> list:
         return result
     except Exception:
         return []
+
+
+# ===================================================================
+# 7. CRUD Users (untuk autentikasi)
+# ===================================================================
+VALID_ROLES = ('developer', 'kahim', 'co', 'anggota')
+
+
+def create_user(username: str, password_hash: str, role: str = 'anggota', department_id: int = None) -> int:
+    if role not in VALID_ROLES:
+        raise ValueError("role harus 'developer', 'kahim', 'co', atau 'anggota'.")
+    supabase = get_supabase()
+    data = {
+        "username": username,
+        "password_hash": password_hash,
+        "role": role,
+    }
+    if department_id is not None:
+        data["department_id"] = department_id
+    resp = supabase.table("users").insert(data).execute()
+    if not resp.data:
+        raise ValueError(f"Username '{username}' sudah ada.")
+    return resp.data[0]["id"]
+
+
+def get_user_by_username(username: str) -> dict | None:
+    supabase = get_supabase()
+    resp = supabase.table("users").select("*").eq("username", username).execute()
+    if not resp.data:
+        return None
+    return resp.data[0]
+
+
+def get_user_by_id(user_id: int) -> dict | None:
+    supabase = get_supabase()
+    resp = supabase.table("users").select("*").eq("id", user_id).execute()
+    if not resp.data:
+        return None
+    return resp.data[0]
+
+
+def get_all_users() -> list:
+    supabase = get_supabase()
+    resp = supabase.table("users").select("id, username, role, department_id, created_at").order("id").execute()
+    return resp.data if resp.data else []
+
+
+def update_user(
+    user_id: int,
+    username: str = None,
+    password_hash: str = None,
+    role: str = None,
+    department_id: int = None,
+) -> bool:
+    supabase = get_supabase()
+    data = {}
+    if username is not None:
+        data["username"] = username
+    if password_hash is not None:
+        data["password_hash"] = password_hash
+    if role is not None:
+        if role not in VALID_ROLES:
+            raise ValueError("role harus 'developer', 'kahim', 'co', atau 'anggota'.")
+        data["role"] = role
+    if department_id is not None:
+        data["department_id"] = department_id
+    if data:
+        supabase.table("users").update(data).eq("id", user_id).execute()
+    return True
+
+
+def delete_user(user_id: int) -> bool:
+    supabase = get_supabase()
+    supabase.table("users").delete().eq("id", user_id).execute()
+    return True

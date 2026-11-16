@@ -78,6 +78,8 @@ Contoh pengelompokan:
 
 Setiap aspek juga punya **bobot aspek** — seberapa besar pengaruh kelompok tersebut terhadap nilai akhir (misalnya Intelektual 40%, Sikap 60%).
 
+> **PENTING: Bobot aspek bersifat GLOBAL.** Satu nilai bobot aspek berlaku untuk **semua departemen**. Jika aspek "Intelektual" diberi bobot 2.0, maka bobot ini sama untuk Departemen A, B, C, dan seterusnya. Sistem ini **tidak mendukung** bobot aspek yang berbeda per departemen.
+
 ### 3.3 Profil Departemen — "Orang seperti apa yang dicari?"
 
 Untuk setiap departemen, pengguna mengisi **profil yang diinginkan**. Satu baris profil terdiri dari:
@@ -87,6 +89,23 @@ Untuk setiap departemen, pengguna mengisi **profil yang diinginkan**. Satu baris
 - **Bobot** — atribut kriteria (0–1) yang **tidak lagi dipakai dalam hitungan**; hanya tersimpan sebagai data cadangan,
 - **Tipe** — **Core (inti)** untuk kriteria yang wajib/sangat menentukan, atau **Secondary (pendukung)** untuk kriteria pelengkap,
 - **Aspek** — kelompok tempat kriteria itu berada.
+
+### 3.4 Role & Hak Akses — "Siapa yang bisa melihat/mengubah apa?"
+
+Aplikasi memiliki **4 level pengguna (role)** dengan hak akses berbeda:
+
+| Role | Lihat Data | Ubah Data | Akses Departemen | User Management |
+|---|---|---|---|---|
+| **Developer** | Semua | Semua (kriteria, aspek, departemen, profil, alternatif, nilai) | Semua | Ya |
+| **Kahim** (Ketua Himpunan) | Semua (read-only) | Tidak bisa | Semua | Tidak |
+| **CO** (Coordinator) | Semua (read-only) | Hanya profil aktif & nilai alternatif miliknya | Hanya 1 departemen | Tidak |
+| **Anggota** | Hanya departemennya (read-only) | Tidak bisa | Hanya 1 departemen | Tidak |
+
+**Implikasi:**
+- **Developer** adalah satu-satunya role yang bisa mengubah data global (kriteria, aspek, departemen) dan mengelola user.
+- **Kahim** adalah role pengawasan — bisa melihat semua data dari semua departemen tapi tidak bisa mengubah apa pun.
+- **CO** bertanggung jawab atas satu departemen — bisa mengubah profil aktif dan menilai alternatif, tapi tidak bisa mengubah data global.
+- **Anggota** hanya bisa melihat data departemennya sendiri.
 
 ---
 
@@ -161,20 +180,30 @@ Contoh aspek **Sikap** berisi Kedisiplinan (tipe **inti**) dan Kerja Sama (tipe 
 
 Nilai aspek dihitung dengan **porsi tetap dari aplikasi**: **60% untuk kriteria inti dan 40% untuk kriteria pendukung**.
 
-- Nilai Aspek = (60% × Nilai Inti) + (40% × Nilai Pendukung)
+**Rumus:**
+
+```
+Nilai Aspek = (0.6 × NCF) + (0.4 × NSF)
+```
 
 Contoh untuk Budi:
 
-| Aspek | Nilai Inti | Nilai Pendukung | Nilai Aspek |
-|---|---|---|---|
-| Intelektual | 4,0 | 0 | 0,6 × 4,0 + 0,4 × 0 = **2,4** |
-| Sikap | 5,0 | 4,0 | 0,6 × 5,0 + 0,4 × 4,0 = **4,6** |
+| Aspek | NCF | NSF | Perhitungan | Nilai Aspek |
+|---|---|---|---|---|
+| Intelektual | 4,0 | 0 | 0,6 × 4,0 + 0,4 × 0 | **2,4** |
+| Sikap | 5,0 | 4,0 | 0,6 × 5,0 + 0,4 × 4,0 | **4,6** |
 
 ### Langkah 5 — Menggabungkan semua aspek menjadi Nilai Akhir
 
 Setiap aspek punya **bobot aspek** (pengaruh terhadap hasil akhir). Nilai akhir dihitung dari **rata-rata berbobot nilai aspek**.
 
-Misalnya bobot aspek: Intelektual = 40%, Sikap = 60%.
+**Rumus:**
+
+```
+Nilai Akhir = Σ(Nilai Aspek × Bobot Aspek) / Σ(Bobot Aspek)
+```
+
+Misalnya bobot aspek: Intelektual = 0,4, Sikap = 0,6.
 
 - Nilai Akhir Budi = (2,4 × 0,4 + 4,6 × 0,6) / (0,4 + 0,6) = (0,96 + 2,76) / 1,0 = **3,72**
 
@@ -201,11 +230,11 @@ Perhitungan per aspek dan nilai akhir:
 
 | Aspek | Bagian | Budi | Ani |
 |---|---|---|---|
-| Intelektual | Nilai Inti | 4,0 | 5,0 |
-| Intelektual | Nilai Pendukung | 0 | 0 |
+| Intelektual | NCF | 4,0 | 5,0 |
+| Intelektual | NSF | 0 | 0 |
 | Intelektual | **Nilai Aspek** | **2,4** | **3,0** |
-| Sikap | Nilai Inti | 5,0 | 4,0 |
-| Sikap | Nilai Pendukung | 4,0 | 5,0 |
+| Sikap | NCF | 5,0 | 4,0 |
+| Sikap | NSF | 4,0 | 5,0 |
 | Sikap | **Nilai Aspek** | **4,6** | **4,4** |
 | | **Nilai Akhir** | **(2,4×0,4 + 4,6×0,6) = 3,72** | **(3,0×0,4 + 4,4×0,6) = 3,84** |
 
@@ -236,6 +265,16 @@ Namun aplikasi juga **waspada**: begitu ada data yang diubah — entah kriteria,
 4. **Kriteria yang belum dinilai dilewati** — tidak ikut dihitung, tidak mengganggu hasil.
 5. **Peringkat bersifat relatif per departemen**: peringkat 1 artinya calon paling cocok *di antara calon-calon yang dinilai untuk departemen itu*, bukan berarti nilainya mutlak sempurna.
 6. **Hasil bisa diekspor** menjadi laporan (PDF) atau data (JSON) untuk arsip dan dokumentasi.
+
+---
+
+## 8. Keterbatasan Sistem
+
+1. **Bobot aspek bersifat global** — semua departemen menggunakan bobot aspek yang sama. Jika diinginkan bobot berbeda per departemen, sistem perlu dimodifikasi.
+2. **Tidak ada bobot per departemen** — kolom `weight` di tabel profil ada tapi tidak dipakai dalam perhitungan.
+3. **Porsi core/secondary tetap** — rasio 60:40 tidak bisa diubah per departemen atau per aspek.
+4. **Satu user = satu departemen** — untuk role CO dan Anggota, satu akun hanya bisa terkait dengan satu departemen.
+5. **Tidak ada multi-departemen untuk CO** — jika CO perlu mengelola lebih dari satu departemen, perlu dibuat akun terpisah atau sistem dimodifikasi.
 
 ---
 

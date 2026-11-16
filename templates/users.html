@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title"><svg class="w-5 h-5 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>Manajemen User</h1>
+
+<div class="toolbar">
+    <button class="btn btn-yellow" onclick="openUserModal()">+ Tambah User</button>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table" id="user-table">
+        <thead>
+            <tr>
+                <th>Nomor</th>
+                <th style="width:auto">Username</th>
+                <th>Role</th>
+                <th>Departemen</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="user-table-body"></tbody>
+    </table>
+</div>
+
+<!-- Modal Tambah/Edit User -->
+<div class="modal-overlay" id="user-modal">
+    <div class="modal-dialog">
+        <h3 id="user-modal-title">Tambah User</h3>
+        <input type="hidden" id="user-edit-id">
+        <div class="form-group">
+            <label for="user-username">Username</label>
+            <input type="text" id="user-username" class="form-input" placeholder="Masukkan username">
+        </div>
+        <div class="form-group">
+            <label for="user-password">Password</label>
+            <input type="password" id="user-password" class="form-input" placeholder="Masukkan password">
+        </div>
+        <div class="form-group">
+            <label for="user-role">Role</label>
+            <select id="user-role" class="form-select" onchange="toggleDepartmentSelect()">
+                <option value="anggota">Anggota</option>
+                <option value="co">Coordinator</option>
+                <option value="kahim">Ketua Himpunan</option>
+                <option value="developer">Developer</option>
+            </select>
+        </div>
+        <div class="form-group" id="user-dept-group">
+            <label for="user-department">Departemen</label>
+            <select id="user-department" class="form-select"></select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-gray" onclick="closeModal('user-modal')">Batal</button>
+            <button class="btn btn-green" onclick="saveUser()">Simpan</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ============================================================
+// CRUD Users
+// ============================================================
+
+let departments = [];
+
+function loadDepartments() {
+    return fetch('/api/departments')
+        .then(r => r.json())
+        .then(data => {
+            departments = data;
+            const select = document.getElementById('user-department');
+            select.innerHTML = '';
+            departments.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.name;
+                select.appendChild(opt);
+            });
+        });
+}
+
+function toggleDepartmentSelect() {
+    const role = document.getElementById('user-role').value;
+    const deptGroup = document.getElementById('user-dept-group');
+    if (role === 'co' || role === 'anggota') {
+        deptGroup.style.display = 'block';
+    } else {
+        deptGroup.style.display = 'none';
+    }
+}
+
+function loadUsers() {
+    fetch('/api/users')
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = '';
+            data.forEach((user, i) => {
+                const tr = document.createElement('tr');
+                const deptName = user.department_id
+                    ? (departments.find(d => d.id === user.department_id)?.name || '-')
+                    : '-';
+                const roleClass = {
+                    'developer': 'badge-core',
+                    'kahim': 'badge-secondary',
+                    'co': 'badge-secondary',
+                    'anggota': 'badge-secondary'
+                }[user.role] || 'badge-secondary';
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${escapeHtml(user.username)}</td>
+                    <td><span class="badge ${roleClass}">${user.role}</span></td>
+                    <td>${escapeHtml(deptName)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-blue" onclick='openUserModal(${JSON.stringify(user)})'>Edit</button>
+                        <button class="btn btn-sm btn-red" onclick="deleteUser(${user.id})">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => showSimpleError(err, 'Gagal memuat data user'));
+}
+
+function openUserModal(user = null) {
+    document.getElementById('user-modal-title').textContent = user ? 'Edit User' : 'Tambah User';
+    document.getElementById('user-edit-id').value = user ? user.id : '';
+    document.getElementById('user-username').value = user ? user.username : '';
+    document.getElementById('user-password').value = '';
+    document.getElementById('user-role').value = user ? user.role : 'anggota';
+    document.getElementById('user-department').value = user?.department_id || '';
+    toggleDepartmentSelect();
+    openModal('user-modal');
+}
+
+function saveUser() {
+    const id = document.getElementById('user-edit-id').value;
+    const username = document.getElementById('user-username').value.trim();
+    const password = document.getElementById('user-password').value;
+    const role = document.getElementById('user-role').value;
+    const departmentId = document.getElementById('user-department').value;
+
+    if (!username) {
+        showAlert('Username harus diisi', 'error');
+        return;
+    }
+    if (!id && !password) {
+        showAlert('Password harus diisi', 'error');
+        return;
+    }
+    if ((role === 'co' || role === 'anggota') && !departmentId) {
+        showAlert('Departemen harus dipilih', 'error');
+        return;
+    }
+
+    const data = { username, role };
+    if (password) data.password = password;
+    if (role === 'co' || role === 'anggota') data.department_id = parseInt(departmentId);
+
+    const url = id ? `/api/users/${id}` : '/api/users';
+    const method = id ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.error) {
+            showAlert(res.error, 'error');
+            return;
+        }
+        showAlert(res.message, 'success');
+        closeModal('user-modal');
+        loadUsers();
+    })
+    .catch(err => showSimpleError(err, 'Gagal menyimpan user'));
+}
+
+function deleteUser(id) {
+    if (!confirm('Yakin ingin menghapus user ini?')) return;
+    fetch(`/api/users/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(res => {
+            if (res.error) {
+                showAlert(res.error, 'error');
+                return;
+            }
+            showAlert(res.message, 'success');
+            loadUsers();
+        })
+        .catch(err => showSimpleError(err, 'Gagal menghapus user'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadDepartments().then(loadUsers);
+});
+</script>
+{% endblock %}

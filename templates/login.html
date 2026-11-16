@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - SPK Profile Matching</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <h1 class="login-title">SPK Profile Matching</h1>
+        <p class="login-subtitle">Masuk untuk melanjutkan</p>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="username">Username</label>
+            <input type="text" id="username" class="form-input" placeholder="Masukkan username" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" class="form-input" placeholder="Masukkan password" required />
+          </div>
+          <button type="submit" class="btn btn-yellow login-btn">Masuk</button>
+        </form>
+
+        <div id="login-error" class="login-error"></div>
+      </div>
+    </div>
+
+    <script>
+      let errorTimeout;
+      function showError(message) {
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.textContent = message;
+        clearTimeout(errorTimeout);
+        errorTimeout = setTimeout(() => { errorDiv.textContent = ''; }, 3000);
+      }
+
+      document.getElementById('login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        try {
+          const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            window.location.href = data.redirect || '/';
+          } else {
+            showError(data.error || 'Login gagal');
+          }
+        } catch (err) {
+          console.error(err);
+          showError('Tidak dapat terhubung ke server');
+        }
+      });
+    </script>
+  </body>
+</html>
