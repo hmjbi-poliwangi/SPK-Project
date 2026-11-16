@@ -97,10 +97,20 @@ def calculate_alternative_score(alternative_id, department_id, core_weight=0.6):
             else:
                 secondary_scores.append(score)
 
-        ncf = sum(core_scores) / len(core_scores) if core_scores else 0
-        nsf = sum(secondary_scores) / len(secondary_scores) if secondary_scores else 0
-
-        nilai_aspek = (core_weight * ncf) + ((1 - core_weight) * nsf)
+        if core_scores and secondary_scores:
+            ncf = sum(core_scores) / len(core_scores)
+            nsf = sum(secondary_scores) / len(secondary_scores)
+            nilai_aspek = (core_weight * ncf) + ((1 - core_weight) * nsf)
+        elif core_scores:
+            ncf = sum(core_scores) / len(core_scores)
+            nsf = 0
+            nilai_aspek = ncf
+        elif secondary_scores:
+            ncf = 0
+            nsf = sum(secondary_scores) / len(secondary_scores)
+            nilai_aspek = nsf
+        else:
+            continue
 
         aspect_scores.append({
             'aspect_id': aspect_id,

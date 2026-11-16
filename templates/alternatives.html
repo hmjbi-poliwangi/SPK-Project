@@ -18,7 +18,7 @@
 
 <div class="toolbar">
   <button class="btn btn-yellow" onclick="openAltModal()">
-    + Tambah Alternatif
+    + Tambah Data Calon
   </button>
 </div>
 
@@ -42,7 +42,7 @@
 <!-- Modal Tambah/Edit Alternatif -->
 <div class="modal-overlay" id="alt-modal">
   <div class="modal-dialog">
-    <h3 id="alt-modal-title">Tambah Alternatif</h3>
+    <h3 id="alt-modal-title">Tambah Data Calon</h3>
     <input type="hidden" id="alt-edit-id" />
     <div class="form-group">
       <label for="alt-name">Nama</label>
@@ -134,7 +134,7 @@
 
   function openAltModal() {
     document.getElementById("alt-modal-title").textContent =
-      "Tambah Alternatif";
+      "Tambah Data Calon";
     document.getElementById("alt-edit-id").value = "";
     document.getElementById("alt-name").value = "";
     document.getElementById("alt-nim").value = "";
@@ -149,7 +149,7 @@
       .then((r) => r.json())
       .then((a) => {
         document.getElementById("alt-modal-title").textContent =
-          "Edit Alternatif";
+          "Edit Data Calon";
         document.getElementById("alt-edit-id").value = a.id;
         document.getElementById("alt-name").value = a.name;
         document.getElementById("alt-nim").value = a.nim;
@@ -199,12 +199,12 @@
   }
 
   function deleteAlternative(id) {
-    if (!confirm("Hapus alternatif ini beserta semua nilainya?")) return;
+    if (!confirm("Hapus data calon ini beserta semua nilainya?")) return;
     fetch(`/api/alternatives/${id}`, { method: "DELETE" })
       .then((r) => r.json())
       .then((res) => {
         if (res.error) {
-          showSimpleError(res.error, "Terjadi kesalahan saat menghapus data");
+          showSimpleError(res.error, "Terjadi kesalahan saat menghapus data calon");
         } else {
           loadAlternatives();
           showAlert(res.message, "success");
